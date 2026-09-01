@@ -84,9 +84,9 @@ function LoginForm() {
 
         <div className="relative flex items-center gap-2.5 fade-up">
           <span className="login-logo-badge w-9 h-9 rounded-md text-white flex items-center justify-center font-display font-semibold">
-            S
+            C
           </span>
-          <span className="font-display text-xl font-semibold text-sidebar-heading">SISODONTO</span>
+          <span className="font-display text-xl font-semibold text-sidebar-heading">ClinBox</span>
         </div>
 
         <div className="relative space-y-4 max-w-sm fade-up" style={{ animationDelay: "80ms" }}>
@@ -117,7 +117,7 @@ function LoginForm() {
         <div className="relative w-full max-w-sm fade-up">
           <div className="mb-8 md:hidden text-center">
             <span className="font-display text-2xl font-semibold text-blue-strong">
-              SISODONTO
+              ClinBox
             </span>
           </div>
 

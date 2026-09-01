@@ -49,7 +49,7 @@ export function Nav({
     <aside className="w-full md:w-[76px] shrink-0 bg-sidebar flex md:flex-col items-center md:h-screen md:sticky md:top-0 py-3 md:pt-5 md:pb-16">
       <Link href="/" className="shrink-0">
         <span className="w-9 h-9 rounded-lg bg-blue-soft text-sidebar-active-text flex items-center justify-center font-display font-semibold">
-          S
+          C
         </span>
       </Link>
 

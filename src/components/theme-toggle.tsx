@@ -10,7 +10,7 @@ import { Palette } from "lucide-react";
 
 type PaletteName = "saude" | "clinic" | "green";
 
-const STORAGE_KEY = "sisodonto-palette";
+const STORAGE_KEY = "clinbox-palette";
 
 // Ordem do ciclo: cada clique avança pra próxima da lista.
 const ORDER: PaletteName[] = ["saude", "clinic", "green"];

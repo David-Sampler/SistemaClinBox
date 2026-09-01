@@ -40,7 +40,7 @@ export default async function PrintDocumentPage({ params }: Props) {
       <div className="w-full max-w-[210mm] bg-white shadow-lg print:shadow-none rounded-lg print:rounded-none p-10 sm:p-14 print:p-[20mm] text-ink">
         {/* Cabeçalho da clínica — o mesmo em todos os tipos de documento */}
         <div className="text-center border-b border-line pb-6 mb-8">
-          <p className="font-display text-xl font-semibold">SISODONTO</p>
+          <p className="font-display text-xl font-semibold">ClinBox</p>
           <p className="text-sm text-ink-muted">Clínica Odontológica</p>
         </div>
 

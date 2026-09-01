@@ -13,7 +13,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "SISODONTO",
+  title: "ClinBox",
   description: "Sistema de gestão para clínicas odontológicas",
 };
 
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 // de segundo antes do React assumir (é por isso que não é um useEffect).
 const themeInitScript = `
   try {
-    var p = localStorage.getItem("sisodonto-palette");
+    var p = localStorage.getItem("clinbox-palette");
     if (p === "clinic" || p === "green") document.documentElement.setAttribute("data-palette", p);
   } catch (e) {}
 `;
