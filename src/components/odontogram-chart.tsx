@@ -1,0 +1,218 @@
+// ODONTOGRAMA: grade visual com os 32 dentes permanentes (notação FDI),
+// desenhados com o contorno de um dente de verdade (não quadrados
+// numerados) — cada um clicável para registrar a situação clínica.
+"use client";
+
+import { useEffect, useState } from "react";
+
+type ToothStatus =
+  | "sadio"
+  | "cariado"
+  | "restaurado"
+  | "ausente"
+  | "extracao_indicada"
+  | "tratamento_endodontico"
+  | "coroa"
+  | "implante"
+  | "fraturado"
+  | "protese";
+
+type Tooth = { number: string; status: ToothStatus; notes?: string };
+
+// Números dos dentes permanentes em notação FDI, organizados por arcada.
+// Arcada superior: quadrantes 1 (direito) e 2 (esquerdo)
+const UPPER_RIGHT = ["18", "17", "16", "15", "14", "13", "12", "11"];
+const UPPER_LEFT = ["21", "22", "23", "24", "25", "26", "27", "28"];
+// Arcada inferior: quadrantes 4 (direito) e 3 (esquerdo)
+const LOWER_RIGHT = ["48", "47", "46", "45", "44", "43", "42", "41"];
+const LOWER_LEFT = ["31", "32", "33", "34", "35", "36", "37", "38"];
+
+// Cada situação clínica tem uma cor com paralelo real no consultório:
+// cárie e fratura puxam para o vermelho/terracota (alerta), restauração
+// e implante puxam para os tons "de marca" (bom/resolvido), coroa usa o
+// bronze (ouro/cerâmica), prótese e canal ganham tons próprios para não
+// se confundirem com o resto. "tooth" colore o desenho do dente;
+// "chip" é usado na legenda e no painel de opções.
+const STATUS_OPTIONS: {
+  value: ToothStatus;
+  label: string;
+  tooth: string;
+  chip: string;
+}[] = [
+  { value: "sadio", label: "Sadio", tooth: "fill-surface stroke-line-soft", chip: "bg-surface border-line text-ink-muted" },
+  { value: "cariado", label: "Cariado", tooth: "fill-danger-soft stroke-danger", chip: "bg-danger-soft border-danger/40 text-danger" },
+  { value: "restaurado", label: "Restaurado", tooth: "fill-blue-soft stroke-blue", chip: "bg-blue-soft border-blue/40 text-blue-strong" },
+  { value: "ausente", label: "Ausente", tooth: "fill-neutral-soft stroke-line", chip: "bg-neutral-soft border-line text-ink-faint" },
+  { value: "extracao_indicada", label: "Extração indicada", tooth: "fill-warning-soft stroke-warning", chip: "bg-warning-soft border-warning/40 text-warning" },
+  { value: "tratamento_endodontico", label: "Tratamento endodôntico", tooth: "fill-tooth-plum-soft stroke-tooth-plum", chip: "bg-tooth-plum-soft border-tooth-plum/40 text-tooth-plum" },
+  { value: "coroa", label: "Coroa", tooth: "fill-brass-soft stroke-brass", chip: "bg-brass-soft border-brass/40 text-brass" },
+  { value: "implante", label: "Implante", tooth: "fill-tooth-metal-soft stroke-tooth-metal", chip: "bg-tooth-metal-soft border-tooth-metal/40 text-tooth-metal" },
+  { value: "fraturado", label: "Fraturado", tooth: "fill-tooth-rust-soft stroke-tooth-rust", chip: "bg-tooth-rust-soft border-tooth-rust/40 text-tooth-rust" },
+  { value: "protese", label: "Prótese", tooth: "fill-tooth-mauve-soft stroke-tooth-mauve", chip: "bg-tooth-mauve-soft border-tooth-mauve/40 text-tooth-mauve" },
+];
+
+function statusOption(status: ToothStatus) {
+  return STATUS_OPTIONS.find((s) => s.value === status) ?? STATUS_OPTIONS[0];
+}
+
+export function OdontogramChart({ patientId }: { patientId: string }) {
+  const [teeth, setTeeth] = useState<Record<string, Tooth>>({});
+  const [selected, setSelected] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadOdontogram();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId]);
+
+  async function loadOdontogram() {
+    setLoading(true);
+    const res = await fetch(`/api/patients/${patientId}/odontogram`);
+    const data = await res.json();
+
+    // Monta um mapa número->dente, começando com todos "sadios" e
+    // sobrescrevendo com o que já foi salvo no banco.
+    const map: Record<string, Tooth> = {};
+    [...UPPER_RIGHT, ...UPPER_LEFT, ...LOWER_RIGHT, ...LOWER_LEFT].forEach((n) => {
+      map[n] = { number: n, status: "sadio" };
+    });
+    (data.odontogram?.teeth ?? []).forEach((t: Tooth) => {
+      map[t.number] = t;
+    });
+
+    setTeeth(map);
+    setLoading(false);
+  }
+
+  async function updateTooth(number: string, status: ToothStatus) {
+    const next = { ...teeth, [number]: { ...teeth[number], status } };
+    setTeeth(next);
+    setSaving(true);
+
+    await fetch(`/api/patients/${patientId}/odontogram`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ teeth: Object.values(next) }),
+    });
+
+    setSaving(false);
+  }
+
+  if (loading) return <p className="text-sm text-ink-muted py-6">Carregando odontograma...</p>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-ink-muted">Clique em um dente para registrar a situação clínica.</p>
+        {saving && <span className="text-xs text-blue">Salvando...</span>}
+      </div>
+
+      <div className="overflow-x-auto">
+        <div className="min-w-[720px] bg-surface-soft border border-line rounded-xl py-6 px-4 space-y-3">
+          {/* Arcada superior */}
+          <div className="flex justify-center gap-1.5">
+            {UPPER_RIGHT.map((n) => (
+              <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} />
+            ))}
+            <div className="w-4" />
+            {UPPER_LEFT.map((n) => (
+              <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} />
+            ))}
+          </div>
+          <div className="border-t border-dashed border-line" />
+          {/* Arcada inferior */}
+          <div className="flex justify-center gap-1.5">
+            {LOWER_RIGHT.map((n) => (
+              <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} flip />
+            ))}
+            <div className="w-4" />
+            {LOWER_LEFT.map((n) => (
+              <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} flip />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Legenda de cores */}
+      <div className="flex flex-wrap gap-2">
+        {STATUS_OPTIONS.map((opt) => (
+          <span key={opt.value} className={`text-xs px-2 py-1 rounded-full border ${opt.chip}`}>
+            {opt.label}
+          </span>
+        ))}
+      </div>
+
+      {/* Painel de edição do dente selecionado */}
+      {selected && teeth[selected] && (
+        <div className="bg-surface-soft border border-line rounded-lg p-4">
+          <p className="font-medium text-ink mb-3">Dente {selected}</p>
+          <div className="flex flex-wrap gap-2">
+            {STATUS_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => updateTooth(selected, opt.value)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-transform ${opt.chip} ${
+                  teeth[selected].status === opt.value ? "ring-2 ring-offset-1 ring-offset-surface-soft ring-blue" : ""
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Contorno simplificado de um dente (coroa arredondada + duas raízes),
+// reaproveitado para todos os dentes — vira de cabeça para baixo na
+// arcada inferior (as raízes das arcadas apontam uma para a outra).
+const TOOTH_PATH =
+  "M12 1.5C7.6 1.5 5 4.6 5 9c0 2.7.7 4.1 1 6.6.4 3.2 1.1 8.4 2.3 10.9.5 1.1 1.1 1.5 1.5 1.5.9 0 1-1.8 1.2-3.4.2-1.6.4-3.1 1-3.1s.8 1.5 1 3.1c.2 1.6.3 3.4 1.2 3.4.4 0 1-.4 1.5-1.5C17.9 24 18.6 18.8 19 15.6c.3-2.5 1-3.9 1-6.6 0-4.4-2.6-7.5-8-7.5Z";
+
+function ToothButton({
+  tooth,
+  selected,
+  onClick,
+  flip,
+}: {
+  tooth?: Tooth;
+  selected: boolean;
+  onClick: () => void;
+  flip?: boolean;
+}) {
+  if (!tooth) return null;
+  const option = statusOption(tooth.status);
+
+  return (
+    <button
+      onClick={onClick}
+      title={`Dente ${tooth.number} — ${option.label}`}
+      className="group flex flex-col items-center gap-1 shrink-0"
+    >
+      <svg
+        viewBox="0 0 24 32"
+        width={26}
+        height={34}
+        className={`transition-transform group-hover:scale-110 ${flip ? "rotate-180" : ""} ${
+          selected ? "scale-110 drop-shadow-sm" : ""
+        }`}
+      >
+        <path
+          d={TOOTH_PATH}
+          strokeWidth={selected ? 2 : 1.3}
+          className={option.tooth}
+        />
+      </svg>
+      <span
+        className={`text-[10px] tabular ${
+          selected ? "font-semibold text-blue-strong" : "text-ink-faint"
+        }`}
+      >
+        {tooth.number}
+      </span>
+    </button>
+  );
+}

@@ -1,0 +1,568 @@
+@import "tailwindcss";
+
+/* ============================================================
+   SISTEMA DE DESIGN DO SISODONTO
+   Paleta: "azul-saúde" — um azul confiável e suave como cor de
+   marca (o mesmo tipo de tom usado por apps de saúde modernos),
+   em vez de verde-clínico ou azul genérico de dashboard. Neutros
+   levemente azulados, dourado quente como destaque pontual.
+   ============================================================ */
+
+:root {
+  /* Superfícies — cinza neutro bem suave, com o mínimo de tinta
+     azulada: fica leve numa tela de trabalho o dia inteiro. */
+  --porcelain: #f6f8fb;      /* fundo da página */
+  --surface: #ffffff;        /* cartões */
+  --surface-soft: #f0f4f9;   /* painéis recuados, formulários */
+
+  /* Texto */
+  --ink: #1a2532;            /* texto principal (preto azulado, não puro) */
+  --ink-muted: #5f6f80;      /* texto secundário */
+  --ink-faint: #98a6b5;      /* placeholders, rótulos discretos */
+
+  /* Linhas */
+  --line: #e0e6ee;
+  --line-soft: #edf1f6;
+
+  /* Marca: azul-saúde — confiável e suave, sem ser frio */
+  --blue: #3a7dd6;
+  --blue-strong: #2a5fac;
+  --blue-soft: #e3edfa;
+
+  /* Destaque secundário: bronze (usar com moderação) */
+  --brass: #a8763a;
+  --brass-soft: #f3e8d3;
+
+  /* Semântico (status) — independente da cor de marca */
+  --success: #2e8b57;
+  --success-soft: #dcefe3;
+  --warning: #a86a0c;
+  --warning-soft: #f5e6c8;
+  --danger: #c1443a;
+  --danger-soft: #f6dedb;
+  --neutral-soft: #edf0f3;
+
+  /* Barra lateral: sempre escura, azul-marinho (identidade de marca
+     fixa, não muda com o tema claro/escuro do visitante) */
+  --sidebar-bg: #122236;
+  --sidebar-active: #1c3350;
+  --sidebar-text: #d3ddea;
+  --sidebar-text-muted: #7c8ba0;
+  --sidebar-active-text: #8ab4f0;
+  --sidebar-line: rgba(255, 255, 255, 0.1);
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  /* Cor de maior contraste possível sobre a barra lateral — usada nos
+     textos "principais" dela (título, frase de destaque do login).
+     Escura ("clínica moderna") ou clara ("azul-saúde"), sempre a mais
+     forte disponível pra aquele fundo. */
+  --sidebar-heading: #ffffff;
+
+  /* Paleta do ODONTOGRAMA: 4 tons extras, coordenados com o resto da
+     paleta, para diferenciar situações clínicas que não são só
+     "bom" (azul) ou "ruim" (danger) — cada uma com um paralelo real
+     no consultório. "Metal" fica cinza (não azul), pra não se
+     confundir com a cor de marca. */
+  --tooth-plum: #7a5c8f;       /* tratamento endodôntico */
+  --tooth-plum-soft: #ece5f0;
+  --tooth-metal: #64748b;      /* implante (metal) */
+  --tooth-metal-soft: #e7eaee;
+  --tooth-rust: #a5502f;       /* fraturado */
+  --tooth-rust-soft: #f2e2da;
+  --tooth-mauve: #8c5a6b;      /* prótese (cerâmica) */
+  --tooth-mauve-soft: #efe2e6;
+}
+
+@theme inline {
+  --color-porcelain: var(--porcelain);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+
+  --color-blue: var(--blue);
+  --color-blue-strong: var(--blue-strong);
+  --color-blue-soft: var(--blue-soft);
+
+  --color-brass: var(--brass);
+  --color-brass-soft: var(--brass-soft);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-neutral-soft: var(--neutral-soft);
+
+  --color-sidebar: var(--sidebar-bg);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-sidebar-text-muted: var(--sidebar-text-muted);
+  --color-sidebar-active-text: var(--sidebar-active-text);
+  --color-sidebar-line: var(--sidebar-line);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-heading: var(--sidebar-heading);
+
+  --color-tooth-plum: var(--tooth-plum);
+  --color-tooth-plum-soft: var(--tooth-plum-soft);
+  --color-tooth-metal: var(--tooth-metal);
+  --color-tooth-metal-soft: var(--tooth-metal-soft);
+  --color-tooth-rust: var(--tooth-rust);
+  --color-tooth-rust-soft: var(--tooth-rust-soft);
+  --color-tooth-mauve: var(--tooth-mauve);
+  --color-tooth-mauve-soft: var(--tooth-mauve-soft);
+
+  /* Um único sistema tipográfico (Geist) — "font-display" reaproveita a
+     mesma família num peso mais forte, em vez de trocar de fonte. */
+  --font-display: var(--font-sans);
+  --font-sans: var(--font-sans);
+}
+
+/* ============================================================
+   SEGUNDO TEMA: "Clínica Moderna" — visual mais claro e colorido,
+   barra lateral branca (em vez de escura) com um destaque violeta
+   suave. Escolhido pelo usuário no seletor de tema (ver ThemeToggle).
+   Troca só os tokens de cor — o resto do sistema (componentes,
+   espaçamento, tipografia) continua exatamente igual.
+   ============================================================ */
+:root[data-palette="clinic"] {
+  --porcelain: #fafafc;
+  --surface: #ffffff;
+  --surface-soft: #f5f4fb;
+
+  --ink: #24232e;
+  --ink-muted: #6b6a78;
+  --ink-faint: #a3a2ae;
+
+  --line: #ebeaf3;
+  --line-soft: #f3f2f9;
+
+  --blue: #6c5ce0;
+  --blue-strong: #5344c4;
+  --blue-soft: #edeafc;
+
+  --brass: #e08a4f;
+  --brass-soft: #fbead9;
+
+  --success: #3fa772;
+  --success-soft: #e1f5ea;
+  --warning: #c08a1e;
+  --warning-soft: #fbf0d9;
+  --danger: #d65c56;
+  --danger-soft: #fbe4e2;
+  --neutral-soft: #f1f0f7;
+
+  /* Aqui a barra lateral é CLARA, ao contrário do tema "Azul-saúde"
+     (onde ela é fixa e escura) — parte da identidade deste tema. */
+  --sidebar-bg: #ffffff;
+  --sidebar-active: #eeeafb;
+  --sidebar-text: #55545f;
+  --sidebar-text-muted: #9b9aa6;
+  --sidebar-active-text: #5f52c7;
+  --sidebar-line: #eeedf5;
+  --sidebar-hover: #f6f5fb;
+  --sidebar-heading: #24232e;
+}
+
+/* ============================================================
+   TERCEIRO TEMA: "Verde-consultório" — o visual verde-clínico das
+   primeiras versões do sistema, mantido como uma terceira opção.
+   Barra lateral escura (verde-floresta) com destaque verde-teal.
+   ============================================================ */
+:root[data-palette="green"] {
+  --porcelain: #f5f6f3;
+  --surface: #ffffff;
+  --surface-soft: #eef1ee;
+
+  --ink: #172420;
+  --ink-muted: #5c6d67;
+  --ink-faint: #93a39d;
+
+  --line: #e1e6e2;
+  --line-soft: #ecefec;
+
+  --blue: #0f6b60;
+  --blue-strong: #0a4f47;
+  --blue-soft: #e3f0ec;
+
+  --brass: #a8763a;
+  --brass-soft: #f3e8d3;
+
+  --success: #2e8b57;
+  --success-soft: #dcefe3;
+  --warning: #a86a0c;
+  --warning-soft: #f5e6c8;
+  --danger: #c1443a;
+  --danger-soft: #f6dedb;
+  --neutral-soft: #eef0ed;
+
+  /* Barra lateral escura, verde-floresta — igual à identidade "sempre
+     escura" do tema Azul-saúde, só que na paleta verde. */
+  --sidebar-bg: #163a30;
+  --sidebar-active: #1f4c40;
+  --sidebar-text: #d7e4e0;
+  --sidebar-text-muted: #82998f;
+  --sidebar-active-text: #8fdcc4;
+  --sidebar-line: rgba(255, 255, 255, 0.1);
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-heading: #ffffff;
+}
+
+/* Tema escuro: só troca os tokens de superfície/texto/marca — a
+   barra lateral (--sidebar-*) fica igual de propósito, ver acima. */
+@media (prefers-color-scheme: dark) {
+  /* :not([data-palette="clinic"]):not([data-palette="green"]) é o pulo
+     do gato aqui: sem isso, o modo escuro do sistema operacional
+     "vencia" essas paletas em tudo, menos na barra lateral (que não é
+     tocada por este bloco de propósito) — por isso parecia que só a
+     barra mudava de tema. Agora, quando uma dessas está escolhida, ela
+     vale mesmo se o sistema operacional estiver no modo escuro. */
+  :root:not([data-theme="light"]):not([data-palette="clinic"]):not([data-palette="green"]) {
+    --porcelain: #0c131d;
+    --surface: #151f2c;
+    --surface-soft: #1b2735;
+
+    --ink: #e7ecf2;
+    --ink-muted: #96a5b6;
+    --ink-faint: #5f6f80;
+
+    --line: #263344;
+    --line-soft: #1e2a39;
+
+    --blue: #6ba3ea;
+    --blue-strong: #8fbdf5;
+    --blue-soft: #1a2c42;
+
+    --brass: #d8a857;
+    --brass-soft: #2e2717;
+
+    --success: #4cae7c;
+    --success-soft: #16332b;
+    --warning: #d9a441;
+    --warning-soft: #332a15;
+    --danger: #e2685d;
+    --danger-soft: #33201e;
+    --neutral-soft: #1b2735;
+
+    --tooth-plum: #b39bc4;
+    --tooth-plum-soft: #2a2233;
+    --tooth-metal: #a3b0bf;
+    --tooth-metal-soft: #232e3b;
+    --tooth-rust: #cf8a6c;
+    --tooth-rust-soft: #33241c;
+    --tooth-mauve: #c493a4;
+    --tooth-mauve-soft: #2f2126;
+  }
+}
+
+:root[data-theme="dark"] {
+  --porcelain: #0c131d;
+  --surface: #151f2c;
+  --surface-soft: #1b2735;
+
+  --ink: #e7ecf2;
+  --ink-muted: #96a5b6;
+  --ink-faint: #5f6f80;
+
+  --line: #263344;
+  --line-soft: #1e2a39;
+
+  --blue: #6ba3ea;
+  --blue-strong: #8fbdf5;
+  --blue-soft: #1a2c42;
+
+  --brass: #d8a857;
+  --brass-soft: #2e2717;
+
+  --success: #4cae7c;
+  --success-soft: #16332b;
+  --warning: #d9a441;
+  --warning-soft: #332a15;
+  --danger: #e2685d;
+  --danger-soft: #33201e;
+  --neutral-soft: #1b2735;
+
+  --tooth-plum: #b39bc4;
+  --tooth-plum-soft: #2a2233;
+  --tooth-metal: #a3b0bf;
+  --tooth-metal-soft: #232e3b;
+  --tooth-rust: #cf8a6c;
+  --tooth-rust-soft: #33241c;
+  --tooth-mauve: #c493a4;
+  --tooth-mauve-soft: #2f2126;
+}
+
+body {
+  background: var(--porcelain);
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Números alinhados em colunas (valores, datas, horários) */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar discreta, na cor do sistema — em vez da cinza padrão do
+   navegador (suportado pelas duas especificações modernas de scrollbar). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--line);
+  border-radius: 999px;
+  border: 2px solid var(--porcelain);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-faint);
+}
+
+/* Anel de foco consistente para navegação por teclado — só aparece
+   quando o foco vem do teclado (:focus-visible), não a cada clique. */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Campo de formulário padrão (input/select/textarea), reaproveitado
+   em vários formulários do sistema para não repetir a mesma lista de
+   classes Tailwind em cada um. */
+.input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 18%, transparent);
+}
+
+/* Botões padrão do sistema — gradiente sutil (não uma cor chapada),
+   um brilho superior discreto (efeito "vidro"), sombra tingida da cor
+   do botão, e uma passada de brilho ao passar o mouse. Tudo discreto,
+   nada de exagero. */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 0.625rem;
+  background: linear-gradient(155deg, var(--blue), var(--blue-strong));
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 25%, transparent) inset,
+    0 1px 2px color-mix(in srgb, var(--blue) 35%, transparent),
+    0 1px 1px color-mix(in srgb, black 6%, transparent);
+  transition: box-shadow 0.15s, transform 0.05s, filter 0.15s;
+}
+/* A "passada de brilho": uma faixa clara que atravessa o botão da
+   esquerda pra direita quando o mouse passa por cima. */
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    color-mix(in srgb, white 30%, transparent) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+.btn-primary:hover {
+  filter: brightness(1.06);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 25%, transparent) inset,
+    0 6px 16px -4px color-mix(in srgb, var(--blue) 45%, transparent),
+    0 1px 1px color-mix(in srgb, black 6%, transparent);
+  transform: translateY(-1px);
+}
+.btn-primary:hover::before {
+  transform: translateX(100%);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+  box-shadow: 0 1px 1px color-mix(in srgb, black 8%, transparent);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+.btn-primary:disabled::before {
+  display: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 1px 1px color-mix(in srgb, black 4%, transparent);
+  transition: background-color 0.15s, border-color 0.15s, transform 0.05s;
+}
+.btn-secondary:hover {
+  background: var(--surface-soft);
+  border-color: color-mix(in srgb, var(--blue) 40%, var(--line));
+}
+.btn-secondary:active {
+  transform: translateY(1px);
+}
+
+/* Cartão com leve elevação ao passar o mouse — usado em itens
+   clicáveis (cards do início, linhas de lista) para dar feedback de
+   que são interativos, sem exagerar num "hover" chamativo. */
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+/* "Shimmer": efeito de carregamento usado nos esqueletos de tela,
+   no lugar de um texto seco de "Carregando...". */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  border-radius: 0.5rem;
+  background: linear-gradient(
+    100deg,
+    var(--surface-soft) 30%,
+    var(--line-soft) 50%,
+    var(--surface-soft) 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Entrada suave para conteúdo que aparece depois de carregar
+   (cartões do início, listas) — um "fade + sobe" bem discreto. */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fade-up 0.35s ease-out both;
+}
+
+/* Versão mais lenta e suave do fade — usada onde o texto precisa de
+   tempo pra ser lido antes de trocar (ex: frases que revezam). */
+@keyframes fade-slow {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-slow {
+  animation: fade-slow 1.1s ease-in-out both;
+}
+
+/* Painel de marca da tela de login: um gradiente sutil construído a
+   partir dos tokens da barra lateral + a cor de marca — em vez de uma
+   cor chapada. Funciona nos dois temas porque parte de --sidebar-bg
+   (escuro no "Azul-saúde", claro no "Clínica moderna"), então o
+   gradiente sempre combina com a paleta ativa. */
+.login-brand-panel {
+  background:
+    radial-gradient(
+      ellipse 900px 600px at 15% 0%,
+      color-mix(in srgb, var(--blue) 32%, var(--sidebar-bg)) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      160deg,
+      var(--sidebar-bg) 0%,
+      color-mix(in srgb, var(--sidebar-bg) 75%, var(--blue-strong)) 60%,
+      color-mix(in srgb, var(--sidebar-bg) 55%, var(--blue-strong)) 100%
+    );
+}
+
+/* Logotipo com um leve gradiente e brilho, em vez de preenchimento liso. */
+.login-logo-badge {
+  background: linear-gradient(155deg, var(--blue), var(--blue-strong));
+  box-shadow:
+    0 1px 1px color-mix(in srgb, white 30%, transparent) inset,
+    0 6px 16px -6px color-mix(in srgb, var(--blue) 70%, transparent);
+}
+
+/* Entrada de modais e painéis laterais */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.anim-scale-in {
+  animation: scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.anim-slide-in-right {
+  animation: slide-in-right 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Pequeno "balanço" para chamar atenção a uma mensagem de erro (ex: no
+   login) — um jeito discreto de dizer "confira de novo" sem popup. */
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.anim-shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .skeleton,
+  .fade-up,
+  .fade-slow,
+  .anim-scale-in,
+  .anim-slide-in-right,
+  .anim-shake,
+  .btn-primary,
+  .btn-primary::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
