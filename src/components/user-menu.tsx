@@ -5,6 +5,7 @@
 
 import { useRef, useState } from "react";
 import { UserAvatar } from "@/components/user-avatar";
+import { AvatarCropModal } from "@/components/avatar-crop-modal";
 
 const roleLabels: Record<string, string> = {
   admin: "Administrador",
@@ -17,20 +18,28 @@ export function UserMenu({ userId, userName, userRole }: { userId: string; userN
   const [version, setVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-
-    setUploading(true);
     setError(null);
+    // Abre o ajuste (posição/zoom) antes de enviar, em vez de subir a
+    // foto crua direto — sem isso, o corte automático no centro podia
+    // deixar o rosto fora do círculo se a foto original não fosse quadrada.
+    setPendingFile(file);
+  }
+
+  async function handleCropConfirm(blob: Blob) {
+    setPendingFile(null);
+    setUploading(true);
 
     const form = new FormData();
-    form.append("file", file);
+    form.append("file", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
     const res = await fetch("/api/users/me/avatar", { method: "POST", body: form });
 
     setUploading(false);
-    e.target.value = "";
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -72,6 +81,10 @@ export function UserMenu({ userId, userName, userRole }: { userId: string; userN
         <p className="absolute top-14 right-4 md:right-8 text-xs text-danger bg-danger-soft border border-danger/20 rounded-lg px-3 py-1.5 shadow-sm z-10">
           {error}
         </p>
+      )}
+
+      {pendingFile && (
+        <AvatarCropModal file={pendingFile} onCancel={() => setPendingFile(null)} onConfirm={handleCropConfirm} />
       )}
     </div>
   );

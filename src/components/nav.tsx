@@ -12,7 +12,6 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { LayoutDashboard, Users, CalendarDays, Wallet, ShoppingCart, Stethoscope, UserCog, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { UserAvatar } from "@/components/user-avatar";
 
 const links = [
   { href: "/", label: "Início", icon: LayoutDashboard },
@@ -24,22 +23,17 @@ const links = [
   { href: "/equipe", label: "Equipe", icon: UserCog },
 ];
 
+// userId/userRole não são mais usados aqui (o avatar da barra lateral
+// foi removido — ver comentário mais abaixo), mas continuam no tipo
+// pra não precisar mudar quem chama <Nav> em src/app/(dashboard)/layout.tsx.
 export function Nav({
-  userId,
   userName,
-  userRole,
 }: {
   userId: string;
   userName: string;
   userRole: string;
 }) {
   const pathname = usePathname();
-
-  const roleLabel: Record<string, string> = {
-    admin: "Administrador",
-    dentist: "Dentista",
-    staff: "Recepção",
-  };
 
   return (
     // md:pb-16 (bem mais que o padding de cima) é de propósito: em modo
@@ -66,13 +60,10 @@ export function Nav({
       </nav>
 
       <div className="flex md:flex-col items-center gap-1 shrink-0">
-        <div className="group relative mb-2 md:mb-1">
-          <UserAvatar userId={userId} name={userName} size={36} tone="sidebar" />
-          <Tooltip>
-            {userName} · {roleLabel[userRole] ?? userRole}
-          </Tooltip>
-        </div>
-
+        {/* A foto+nome de quem está logado já aparece sempre visível no
+            topo da página (UserMenu) — repetir aqui, só no hover, era
+            redundante (e a versão daqui não atualizava sozinha depois
+            de trocar a foto). Removido de propósito. */}
         <ThemeToggle />
 
         {/* Separador antes de Sair — deixa claro que é uma ação diferente

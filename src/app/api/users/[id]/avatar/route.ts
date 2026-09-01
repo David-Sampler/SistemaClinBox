@@ -23,6 +23,16 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Sem foto de perfil" }, { status: 404 });
   }
 
+  // O id do arquivo no GridFS muda toda vez que a foto é trocada (o
+  // upload apaga o arquivo antigo e cria um novo) — então ele serve
+  // perfeitamente como ETag: sem precisar cada tela lembrar de "furar"
+  // o cache na unha (como o "?v=" que só o topo da página fazia antes,
+  // deixando a barra lateral e a tela inicial presas na foto antiga).
+  const etag = `"${user.avatarFileId.toString()}"`;
+  if (_req.headers.get("if-none-match") === etag) {
+    return new NextResponse(null, { status: 304 });
+  }
+
   const bucket = await getBucket("avatars");
   const downloadStream = bucket.openDownloadStream(user.avatarFileId);
   const webStream = Readable.toWeb(downloadStream) as ReadableStream;
@@ -30,7 +40,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
   return new NextResponse(webStream, {
     headers: {
       "Content-Type": user.avatarMimeType || "image/jpeg",
-      "Cache-Control": "private, max-age=3600",
+      // "no-cache" não significa "não guarda" — significa "guarda, mas
+      // sempre confirma com o servidor antes de reusar" (via ETag). Isso
+      // garante que uma foto nova aparece na hora em qualquer tela,
+      // sem precisar de um parâmetro "?v=" manual em cada lugar.
+      "Cache-Control": "private, no-cache",
+      ETag: etag,
     },
   });
 }
