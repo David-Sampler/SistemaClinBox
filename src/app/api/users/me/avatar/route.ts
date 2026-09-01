@@ -40,9 +40,14 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const uploadStream = bucket.openUploadStream(`avatar-${userId}`, { contentType: file.type });
+  const uploadStream = bucket.openUploadStream(`avatar-${userId}`, { metadata: { contentType: file.type } });
+  // Erros de gravação chegam pelo evento "error" do stream, não por um
+  // callback do end() — versões recentes do driver do MongoDB não
+  // passam mais o erro como argumento do callback de conclusão.
   await new Promise<void>((resolve, reject) => {
-    uploadStream.end(buffer, (err) => (err ? reject(err) : resolve()));
+    uploadStream.once("finish", () => resolve());
+    uploadStream.once("error", reject);
+    uploadStream.end(buffer);
   });
 
   await User.findByIdAndUpdate(userId, {

@@ -62,9 +62,14 @@ export async function POST(req: NextRequest, { params }: Params) {
   // Guarda o conteúdo do arquivo no GridFS (fora do documento do Mongoose,
   // que só guarda os metadados) e espera a gravação terminar.
   const buffer = Buffer.from(await file.arrayBuffer());
-  const uploadStream = bucket.openUploadStream(file.name, { contentType: file.type });
+  const uploadStream = bucket.openUploadStream(file.name, { metadata: { contentType: file.type } });
+  // Erros de gravação chegam pelo evento "error" do stream, não por um
+  // callback do end() — versões recentes do driver do MongoDB não
+  // passam mais o erro como argumento do callback de conclusão.
   await new Promise<void>((resolve, reject) => {
-    uploadStream.end(buffer, (err) => (err ? reject(err) : resolve()));
+    uploadStream.once("finish", () => resolve());
+    uploadStream.once("error", reject);
+    uploadStream.end(buffer);
   });
 
   const attachment = await Attachment.create({

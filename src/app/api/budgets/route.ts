@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
 
   await connectDB();
   const status = req.nextUrl.searchParams.get("status");
-  const filter = status ? { status } : {};
+  const filter: Record<string, unknown> = {};
+  if (status) filter.status = status;
 
   const budgets = await Budget.find(filter)
     .populate("patient", "name phone")
