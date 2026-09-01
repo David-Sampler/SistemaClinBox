@@ -5,6 +5,9 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig: NextAuthConfig = {
+  // Necessário em produção atrás de um proxy (Vercel, etc.) — sem isso o
+  // NextAuth rejeita o próprio domínio como "host não confiável".
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
