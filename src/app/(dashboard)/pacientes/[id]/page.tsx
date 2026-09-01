@@ -167,7 +167,7 @@ export default async function PatientDetailPage({ params }: Props) {
       </div>
 
       {healthAlerts.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 bg-warning-soft border border-warning/20 rounded-xl px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 print:break-inside-avoid bg-warning-soft border border-warning/20 rounded-xl px-4 py-3">
           <AlertTriangle size={16} className="text-warning shrink-0" />
           {healthAlerts.map((label) => (
             <span key={label} className="text-xs font-medium px-2 py-0.5 rounded-full bg-surface text-warning">
@@ -181,7 +181,7 @@ export default async function PatientDetailPage({ params }: Props) {
           seu próprio atalho de edição, igual a prontuários eletrônicos de
           mercado (a foto/contato nunca fica longe do lápis de editar). */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="fade-up bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5 flex flex-col items-center text-center gap-1">
+        <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5 flex flex-col items-center text-center gap-1">
           <Link
             href={editHref}
             className="print:hidden self-end -mt-1 -mr-1 text-ink-faint hover:text-blue transition-colors"
@@ -316,7 +316,10 @@ function StatCard({
   const toneClass =
     tone === "warning" ? "bg-warning-soft text-warning" : tone === "success" ? "bg-success-soft text-success" : "bg-blue-soft text-blue";
   return (
-    <div className="fade-up bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4">
+    // print:break-inside-avoid: sem isso, a impressão podia cortar o
+    // cartão ao meio bem na quebra de página (o ícone ficava numa
+    // página e o valor/rótulo pulava sozinho pra próxima).
+    <div className="fade-up print:break-inside-avoid bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4">
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${toneClass} mb-2.5`}>
         <Icon size={16} />
       </div>
@@ -339,7 +342,7 @@ function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fade-up bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5">
+    <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5">
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
           <Icon size={15} className="text-ink-faint" />

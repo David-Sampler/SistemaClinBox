@@ -157,7 +157,7 @@ export function OdontogramChart({ patientId }: { patientId: string }) {
           os 32 dentes caibam na largura de uma folha A4, sem cortar os
           últimos (28 e 38) como acontecia antes. */}
       <div className="overflow-x-auto print:overflow-visible">
-        <div className="min-w-[720px] print:min-w-0 bg-surface-soft border border-line rounded-xl py-6 px-2 sm:px-4 print:py-3 print:px-2 space-y-3">
+        <div className="min-w-[720px] print:min-w-0 print:break-inside-avoid bg-surface-soft border border-line rounded-xl py-6 px-2 sm:px-4 print:py-3 print:px-2 space-y-3">
           {/* Arcada superior */}
           <div className="flex justify-center gap-1.5 print:gap-0.5">
             {UPPER_RIGHT.map((n) => (
@@ -187,7 +187,7 @@ export function OdontogramChart({ patientId }: { patientId: string }) {
           seletor (quando um dente está escolhido e dá pra editar, fica
           clicável e destaca a situação atual). Antes eram duas listas
           repetidas na tela; agora é uma coisa só. */}
-      <div className="bg-surface-soft border border-line rounded-lg p-4 space-y-3">
+      <div className="print:break-inside-avoid bg-surface-soft border border-line rounded-lg p-4 space-y-3">
         <p className="text-sm font-medium text-ink">
           {selected ? `Dente ${selected}` : "Situações clínicas"}
           {!canManage && selected && <span className="text-ink-faint font-normal"> — somente consulta</span>}
