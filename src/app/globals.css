@@ -501,27 +501,59 @@ body {
    cor chapada. Funciona nos dois temas porque parte de --sidebar-bg
    (escuro no "Azul-saúde", claro no "Clínica moderna"), então o
    gradiente sempre combina com a paleta ativa. */
+/* O painel de marca do login é de propósito INDEPENDENTE do tema ativo
+   (--sidebar-*, --blue mudam conforme "Azul-saúde"/"Clínica moderna"/
+   "Verde-consultório") — pediram uma identidade fixa aqui: azul-marinho
+   #00203f com degrade, sempre igual não importa o tema escolhido no
+   resto do sistema. Por isso usa cores fixas, não os tokens de tema.
+   As classes .login-heading/.login-text/.login-text-muted (usadas em
+   src/app/login/page.tsx) seguem a mesma lógica — sem elas, o texto
+   herdaria a cor do tema ativo e podia ficar ilegível sobre esse fundo
+   escuro fixo (ex: texto escuro do tema "Clínica moderna" sobre navy). */
 .login-brand-panel {
   background:
     radial-gradient(
       ellipse 900px 600px at 15% 0%,
-      color-mix(in srgb, var(--blue) 32%, var(--sidebar-bg)) 0%,
+      #1f6fb0 0%,
       transparent 60%
     ),
-    linear-gradient(
-      160deg,
-      var(--sidebar-bg) 0%,
-      color-mix(in srgb, var(--sidebar-bg) 75%, var(--blue-strong)) 60%,
-      color-mix(in srgb, var(--sidebar-bg) 55%, var(--blue-strong)) 100%
-    );
+    linear-gradient(160deg, #00203f 0%, #001830 60%, #001120 100%);
+}
+
+.login-heading {
+  color: #ffffff;
+}
+.login-text {
+  color: #d3ddea;
+}
+.login-text-muted {
+  color: #7c8ba0;
 }
 
 /* Logotipo com um leve gradiente e brilho, em vez de preenchimento liso. */
 .login-logo-badge {
-  background: linear-gradient(155deg, var(--blue), var(--blue-strong));
+  background: linear-gradient(155deg, #1f6fb0, #00203f);
   box-shadow:
     0 1px 1px color-mix(in srgb, white 30%, transparent) inset,
-    0 6px 16px -6px color-mix(in srgb, var(--blue) 70%, transparent);
+    0 6px 16px -6px color-mix(in srgb, #00203f 70%, transparent);
+}
+
+/* Botão "Entrar" combinando com o navy fixo do painel de marca — sem
+   isso ele puxava a cor do tema ativo (--blue), que podia destoar do
+   #00203f fixo ao lado. ".btn-primary" continua dando a base (forma,
+   passada de brilho no hover); só a cor é sobrescrita aqui. */
+.btn-primary.login-submit {
+  background: linear-gradient(155deg, #1f6fb0, #00203f);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 25%, transparent) inset,
+    0 1px 2px color-mix(in srgb, #00203f 35%, transparent),
+    0 1px 1px color-mix(in srgb, black 6%, transparent);
+}
+.btn-primary.login-submit:hover {
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 25%, transparent) inset,
+    0 6px 16px -4px color-mix(in srgb, #00203f 45%, transparent),
+    0 1px 1px color-mix(in srgb, black 6%, transparent);
 }
 
 /* Entrada de modais e painéis laterais */

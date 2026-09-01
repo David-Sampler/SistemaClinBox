@@ -68,42 +68,42 @@ function LoginForm() {
   return (
     <div className="min-h-screen grid md:grid-cols-2 bg-porcelain">
       {/* Painel de marca — some em telas pequenas */}
-      <div className="login-brand-panel hidden md:flex flex-col justify-between text-sidebar-text p-12 relative overflow-hidden">
+      <div className="login-brand-panel hidden md:flex flex-col justify-between login-text p-12 relative overflow-hidden">
         <div
           aria-hidden
-          className="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-blue-soft/25 blur-3xl"
+          className="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-white/10 blur-3xl"
         />
         <div
           aria-hidden
-          className="absolute -left-20 bottom-10 w-80 h-80 rounded-full bg-brass/15 blur-3xl"
+          className="absolute -left-20 bottom-10 w-80 h-80 rounded-full bg-[#a8763a]/15 blur-3xl"
         />
         <div
           aria-hidden
-          className="absolute right-1/4 bottom-1/3 w-64 h-64 rounded-full bg-success/10 blur-3xl"
+          className="absolute right-1/4 bottom-1/3 w-64 h-64 rounded-full bg-[#2e8b57]/10 blur-3xl"
         />
 
         <div className="relative flex items-center gap-2.5 fade-up">
           <span className="login-logo-badge w-9 h-9 rounded-md text-white flex items-center justify-center font-display font-semibold">
             C
           </span>
-          <span className="font-display text-xl font-semibold text-sidebar-heading">ClinBox</span>
+          <span className="login-heading font-display text-xl font-semibold">ClinBox</span>
         </div>
 
         <div className="relative space-y-4 max-w-sm fade-up" style={{ animationDelay: "80ms" }}>
           {/* min-height evita que o texto "pule" ao trocar de frase */}
           <p
             key={taglineIndex}
-            className="fade-slow font-display text-3xl leading-snug text-sidebar-heading text-balance min-h-[5.5rem]"
+            className="login-heading fade-slow font-display text-3xl leading-snug text-balance min-h-[5.5rem]"
           >
             {TAGLINES[taglineIndex]}
           </p>
-          <p className="text-sidebar-text-muted text-[0.95rem] leading-relaxed">
+          <p className="login-text-muted text-[0.95rem] leading-relaxed">
             Prontuário, odontograma, agenda e financeiro da clínica, acessíveis
             para toda a equipe, com o histórico do paciente sempre à mão.
           </p>
         </div>
 
-        <p className="relative text-xs text-sidebar-text-muted">
+        <p className="login-text-muted relative text-xs">
           Sistema de gestão odontológica
         </p>
       </div>
@@ -193,7 +193,7 @@ function LoginForm() {
               </p>
             )}
 
-            <button type="submit" disabled={loading} className="w-full btn-primary">
+            <button type="submit" disabled={loading} className="w-full btn-primary login-submit">
               {loading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
