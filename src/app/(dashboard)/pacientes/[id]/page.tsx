@@ -37,6 +37,7 @@ import { PatientTabs } from "@/components/patient-tabs";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
 import { PrintPageButton } from "@/components/print-page-button";
+import { DeactivatePatientButton } from "@/components/deactivate-patient-button";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -134,7 +135,11 @@ export default async function PatientDetailPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lastDentistName = (lastAppointment?.dentist as any)?.name as string | undefined;
 
-  const editHref = `/pacientes/${id}?tab=dados`;
+  // O "#patient-tabs" no final faz o navegador rolar até as abas — sem
+  // isso, clicar em "Editar dados" trocava a aba certinho por baixo dos
+  // panos, mas como as abas ficam mais abaixo na página (depois dos
+  // cartões e indicadores), na prática parecia que "não acontecia nada".
+  const editHref = `/pacientes/${id}?tab=dados#patient-tabs`;
 
   return (
     <div className="space-y-6">
@@ -157,6 +162,7 @@ export default async function PatientDetailPage({ params }: Props) {
           <Link href={editHref} className="btn-primary">
             <Pencil size={15} /> Editar dados
           </Link>
+          <DeactivatePatientButton patientId={id} patientName={patient.name} />
         </div>
       </div>
 
@@ -272,6 +278,7 @@ export default async function PatientDetailPage({ params }: Props) {
         <StatCard icon={CircleCheck} label="Total pago" value={currency(paidTotal)} detail="Histórico completo" tone="success" />
       </div>
 
+      <div id="patient-tabs" />
       <PatientTabs
         patientId={String(patient._id)}
         dentists={dentists.map((d) => ({ id: String(d._id), name: d.name }))}
