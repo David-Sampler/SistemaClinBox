@@ -149,7 +149,11 @@ export default async function DashboardHome() {
           className="absolute -left-10 bottom-0 w-56 h-56 rounded-full bg-brass/10 blur-3xl"
         />
         <div className="relative flex items-center gap-4">
-          <UserAvatar userId={userId} name={userName} size={56} tone="sidebar" className="ring-2 ring-white/15" />
+          {/* version=Date.now(): essa página é renderizada de novo no
+              servidor a cada visita (usa a sessão), então isso gera uma
+              URL sempre nova — sem depender de nenhuma regra de cache
+              do navegador pra mostrar a foto mais recente aqui. */}
+          <UserAvatar userId={userId} name={userName} size={56} tone="sidebar" version={Date.now()} className="ring-2 ring-white/15" />
           <div>
             <h1 className="font-display text-2xl font-semibold text-sidebar-heading">
               {greeting()}, {userName.split(" ")[0]}

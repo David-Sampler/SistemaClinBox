@@ -23,7 +23,12 @@ export function AvatarCropModal({
   const imageUrl = useMemo(() => URL.createObjectURL(file), [file]);
   const imgRef = useRef<HTMLImageElement>(null);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
-  const [zoom, setZoom] = useState(1);
+  // Começa em 1.15, não 1.0: no zoom mínimo (1.0) a foto cobre a
+  // moldura exatamente, e se ela for quadrada ou próxima disso, o
+  // arrasto num dos eixos não tem pra onde ir — parece "travado" mesmo
+  // sem bug nenhum. Começando um pouco além do mínimo, sempre sobra
+  // espaço pra arrastar nos dois eixos desde o primeiro clique.
+  const [zoom, setZoom] = useState(1.15);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragState = useRef<{ startX: number; startY: number; origin: { x: number; y: number } } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -126,6 +131,7 @@ export function AvatarCropModal({
             onLoad={(e) => {
               const el = e.currentTarget;
               setNatural({ w: el.naturalWidth, h: el.naturalHeight });
+              setZoom(1.15);
               setOffset({ x: 0, y: 0 });
             }}
             style={{
