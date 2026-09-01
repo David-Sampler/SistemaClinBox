@@ -12,6 +12,7 @@ import { Pencil, Plus, UserX } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
 import { Modal } from "@/components/modal";
+import { PermissionsPanel } from "@/components/permissions-panel";
 
 type Member = {
   _id: string;
@@ -200,6 +201,8 @@ export default function EquipePage() {
           </ul>
         )}
       </div>
+
+      {isAdmin && <PermissionsPanel />}
 
       {editing && (
         <EditMemberModal

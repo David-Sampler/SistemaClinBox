@@ -6,15 +6,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { UserX } from "lucide-react";
+import { usePermission } from "@/components/permissions-provider";
 
 export function DeactivatePatientButton({ patientId, patientName }: { patientId: string; patientName: string }) {
-  const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
+  // O admin decide em Equipe → Permissões se a recepção (staff) pode
+  // desativar cadastro de paciente.
+  const canManage = usePermission("deletePatients");
   if (!canManage) return null;
 
   async function handleDeactivate() {

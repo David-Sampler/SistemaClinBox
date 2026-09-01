@@ -4,7 +4,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { usePermission } from "@/components/permissions-provider";
 
 type ToothStatus =
   | "sadio"
@@ -18,7 +18,7 @@ type ToothStatus =
   | "fraturado"
   | "protese";
 
-type Tooth = { number: string; status: ToothStatus; notes?: string };
+type Tooth = { number: string; status: ToothStatus; faces?: string[]; notes?: string };
 
 // Números dos dentes permanentes em notação FDI, organizados por arcada.
 // Arcada superior: quadrantes 1 (direito) e 2 (esquerdo)
@@ -33,7 +33,8 @@ const LOWER_LEFT = ["31", "32", "33", "34", "35", "36", "37", "38"];
 // e implante puxam para os tons "de marca" (bom/resolvido), coroa usa o
 // bronze (ouro/cerâmica), prótese e canal ganham tons próprios para não
 // se confundirem com o resto. "tooth" colore o desenho do dente;
-// "chip" é usado na legenda e no painel de opções.
+// "chip" é usado na lista de situações (que funciona como legenda E
+// como seletor — ver renderização abaixo).
 const STATUS_OPTIONS: {
   value: ToothStatus;
   label: string;
@@ -52,14 +53,30 @@ const STATUS_OPTIONS: {
   { value: "protese", label: "Prótese", tooth: "fill-tooth-mauve-soft stroke-tooth-mauve", chip: "bg-tooth-mauve-soft border-tooth-mauve/40 text-tooth-mauve" },
 ];
 
+// Faces do dente — só fazem sentido pra situações que afetam uma parte
+// específica do dente (cárie, restauração, fratura), não o dente
+// inteiro (ausente, coroa, implante, prótese, canal, extração).
+const FACE_OPTIONS: { value: string; label: string }[] = [
+  { value: "oclusal", label: "Oclusal" },
+  { value: "mesial", label: "Mesial" },
+  { value: "distal", label: "Distal" },
+  { value: "vestibular", label: "Vestibular" },
+  { value: "lingual", label: "Lingual/Palatina" },
+];
+const FACE_RELEVANT_STATUSES: ToothStatus[] = ["cariado", "restaurado", "fraturado"];
+
 function statusOption(status: ToothStatus) {
   return STATUS_OPTIONS.find((s) => s.value === status) ?? STATUS_OPTIONS[0];
 }
 
+function faceLabel(value: string) {
+  return FACE_OPTIONS.find((f) => f.value === value)?.label ?? value;
+}
+
 export function OdontogramChart({ patientId }: { patientId: string }) {
-  const { data: session } = useSession();
-  // Odontograma é ação clínica: recepção (staff) acompanha, mas não registra.
-  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
+  // Odontograma é ação clínica — o admin decide em Equipe → Permissões
+  // se a recepção (staff) pode registrar ou só acompanhar.
+  const canManage = usePermission("odontogram");
   const [teeth, setTeeth] = useState<Record<string, Tooth>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,24 +106,43 @@ export function OdontogramChart({ patientId }: { patientId: string }) {
     setLoading(false);
   }
 
-  async function updateTooth(number: string, status: ToothStatus) {
-    const next = { ...teeth, [number]: { ...teeth[number], status } };
+  async function persist(next: Record<string, Tooth>) {
     setTeeth(next);
     setSaving(true);
-
     await fetch(`/api/patients/${patientId}/odontogram`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ teeth: Object.values(next) }),
     });
-
     setSaving(false);
+  }
+
+  async function updateTooth(number: string, status: ToothStatus) {
+    // Trocar pra uma situação que não é "de face" (ex: ausente, coroa)
+    // limpa as faces marcadas — não faz sentido guardar "mesial" num
+    // dente que já foi extraído.
+    const keepFaces = FACE_RELEVANT_STATUSES.includes(status);
+    const next = {
+      ...teeth,
+      [number]: { ...teeth[number], status, faces: keepFaces ? teeth[number]?.faces : undefined },
+    };
+    await persist(next);
+  }
+
+  async function toggleFace(number: string, face: string) {
+    const current = teeth[number]?.faces ?? [];
+    const nextFaces = current.includes(face) ? current.filter((f) => f !== face) : [...current, face];
+    const next = { ...teeth, [number]: { ...teeth[number], faces: nextFaces } };
+    await persist(next);
   }
 
   if (loading) return <p className="text-sm text-ink-muted py-6">Carregando odontograma...</p>;
 
+  const selectedTooth = selected ? teeth[selected] : undefined;
+  const clickable = canManage && !!selected;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-muted">
           {canManage ? "Clique em um dente para registrar a situação clínica." : "Clique em um dente para ver a situação clínica."}
@@ -140,34 +176,63 @@ export function OdontogramChart({ patientId }: { patientId: string }) {
         </div>
       </div>
 
-      {/* Legenda de cores */}
-      <div className="flex flex-wrap gap-2">
-        {STATUS_OPTIONS.map((opt) => (
-          <span key={opt.value} className={`text-xs px-2 py-1 rounded-full border ${opt.chip}`}>
-            {opt.label}
-          </span>
-        ))}
-      </div>
-
-      {/* Painel de edição do dente selecionado — só quem pode registrar */}
-      {canManage && selected && teeth[selected] && (
-        <div className="bg-surface-soft border border-line rounded-lg p-4">
-          <p className="font-medium text-ink mb-3">Dente {selected}</p>
-          <div className="flex flex-wrap gap-2">
-            {STATUS_OPTIONS.map((opt) => (
+      {/* Uma lista só de situações clínicas — funciona como legenda
+          (sempre visível, mostra o que cada cor significa) E como
+          seletor (quando um dente está escolhido e dá pra editar, fica
+          clicável e destaca a situação atual). Antes eram duas listas
+          repetidas na tela; agora é uma coisa só. */}
+      <div className="bg-surface-soft border border-line rounded-lg p-4 space-y-3">
+        <p className="text-sm font-medium text-ink">
+          {selected ? `Dente ${selected}` : "Situações clínicas"}
+          {!canManage && selected && <span className="text-ink-faint font-normal"> — somente consulta</span>}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {STATUS_OPTIONS.map((opt) => {
+            const isActive = selectedTooth?.status === opt.value;
+            return (
               <button
                 key={opt.value}
-                onClick={() => updateTooth(selected, opt.value)}
+                type="button"
+                disabled={!clickable}
+                onClick={clickable ? () => updateTooth(selected!, opt.value) : undefined}
                 className={`text-xs px-3 py-1.5 rounded-full border transition-transform ${opt.chip} ${
-                  teeth[selected].status === opt.value ? "ring-2 ring-offset-1 ring-offset-surface-soft ring-blue" : ""
-                }`}
+                  isActive ? "ring-2 ring-offset-1 ring-offset-surface-soft ring-blue" : ""
+                } ${clickable ? "hover:scale-105 cursor-pointer" : "cursor-default"}`}
               >
                 {opt.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      )}
+
+        {/* Face do dente: só aparece quando a situação afeta uma parte
+            específica do dente, não ele inteiro. */}
+        {selectedTooth && FACE_RELEVANT_STATUSES.includes(selectedTooth.status) && (
+          <div className="pt-1 border-t border-line-soft">
+            <p className="text-xs font-medium text-ink-muted mb-1.5 mt-2">Face do dente (opcional)</p>
+            <div className="flex flex-wrap gap-1.5">
+              {FACE_OPTIONS.map((face) => {
+                const active = selectedTooth.faces?.includes(face.value);
+                return (
+                  <button
+                    key={face.value}
+                    type="button"
+                    disabled={!canManage}
+                    onClick={canManage ? () => toggleFace(selected!, face.value) : undefined}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      active
+                        ? "bg-ink text-porcelain border-ink"
+                        : "bg-surface text-ink-muted border-line hover:border-blue/40"
+                    } ${canManage ? "cursor-pointer" : "cursor-default"}`}
+                  >
+                    {face.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -191,11 +256,12 @@ function ToothButton({
 }) {
   if (!tooth) return null;
   const option = statusOption(tooth.status);
+  const facesSuffix = tooth.faces?.length ? ` (${tooth.faces.map(faceLabel).join(", ")})` : "";
 
   return (
     <button
       onClick={onClick}
-      title={`Dente ${tooth.number} — ${option.label}`}
+      title={`Dente ${tooth.number} — ${option.label}${facesSuffix}`}
       className={`group flex flex-col items-center gap-1 shrink-0 rounded-lg px-1.5 py-1.5 transition-all ${
         selected ? "bg-blue-soft ring-2 ring-blue shadow-sm" : "hover:bg-surface-soft"
       }`}
@@ -221,6 +287,7 @@ function ToothButton({
       >
         {tooth.number}
       </span>
+      {tooth.faces?.length ? <span className="w-1.5 h-1.5 rounded-full bg-ink-faint -mt-1" aria-hidden /> : null}
     </button>
   );
 }

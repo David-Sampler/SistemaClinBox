@@ -5,6 +5,7 @@
 import { auth } from "@/auth";
 import { Nav } from "@/components/nav";
 import { UserMenu } from "@/components/user-menu";
+import { PermissionsProvider } from "@/components/permissions-provider";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -18,12 +19,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userName = session.user.name ?? "Usuário";
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
-      <Nav userId={session.user.id} userName={userName} userRole={session.user.role} />
-      <main className="flex-1 flex flex-col overflow-x-hidden">
-        <UserMenu userId={session.user.id} userName={userName} userRole={session.user.role} />
-        <div className="flex-1 p-4 md:p-8">{children}</div>
-      </main>
-    </div>
+    <PermissionsProvider>
+      <div className="flex flex-col md:flex-row min-h-screen">
+        <Nav userId={session.user.id} userName={userName} userRole={session.user.role} />
+        <main className="flex-1 flex flex-col overflow-x-hidden">
+          <UserMenu userId={session.user.id} userName={userName} userRole={session.user.role} />
+          <div className="flex-1 p-4 md:p-8">{children}</div>
+        </main>
+      </div>
+    </PermissionsProvider>
   );
 }

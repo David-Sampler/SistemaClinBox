@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Product } from "@/models/Product";
 import { productSchema } from "@/lib/validators";
-import { requireSession, requireRole } from "@/lib/api-auth";
+import { requireSession } from "@/lib/api-auth";
+import { requirePermission } from "@/lib/permissions";
 
 export async function GET() {
   const { error } = await requireSession();
@@ -18,7 +19,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { session, error } = await requireSession();
   if (error) return error;
-  const forbidden = requireRole(session!.user.role, ["admin", "dentist"]);
+  const forbidden = await requirePermission(session!.user.role, "catalog");
   if (forbidden) return forbidden;
 
   const body = await req.json();

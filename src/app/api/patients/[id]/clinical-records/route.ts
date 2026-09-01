@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { ClinicalRecord } from "@/models/ClinicalRecord";
 import { clinicalRecordSchema } from "@/lib/validators";
-import { requireSession, requireRole } from "@/lib/api-auth";
+import { requireSession } from "@/lib/api-auth";
+import { requirePermission } from "@/lib/permissions";
 
 // Rota de API do PRONTUÁRIO (histórico de procedimentos) de um paciente:
 // listar (GET) e adicionar um novo registro (POST).
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { session, error } = await requireSession();
   if (error) return error;
   // Prontuário é ação clínica — recepção (staff) só acompanha, não registra.
-  const forbidden = requireRole(session!.user.role, ["admin", "dentist"]);
+  const forbidden = await requirePermission(session!.user.role, "clinicalRecords");
   if (forbidden) return forbidden;
 
   const { id } = await params;

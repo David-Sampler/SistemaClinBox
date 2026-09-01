@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Patient } from "@/models/Patient";
 import { patientSchema } from "@/lib/validators";
-import { requireSession, requireRole } from "@/lib/api-auth";
+import { requireSession } from "@/lib/api-auth";
+import { requirePermission } from "@/lib/permissions";
 
 // Rota de API para UM paciente específico: ver (GET), editar (PUT) e
 // "excluir" (DELETE — na verdade só marca como inativo, não apaga do banco).
@@ -42,7 +43,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { session, error } = await requireSession();
   if (error) return error;
-  const forbidden = requireRole(session!.user.role, ["admin", "dentist"]);
+  const forbidden = await requirePermission(session!.user.role, "deletePatients");
   if (forbidden) return forbidden;
 
   const { id } = await params;

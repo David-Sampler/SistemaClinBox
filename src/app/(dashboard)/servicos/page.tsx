@@ -6,7 +6,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useSession } from "next-auth/react";
+import { usePermission } from "@/components/permissions-provider";
 import { Pencil, Plus, Search, Stethoscope, Package, Trash2, Boxes } from "lucide-react";
 import { colorFor } from "@/lib/palette";
 import { Modal } from "@/components/modal";
@@ -118,7 +118,6 @@ function CatalogToolbar({
 }
 
 function ServicosTab() {
-  const { data: session } = useSession();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -127,7 +126,9 @@ function ServicosTab() {
   const [category, setCategory] = useState("");
   const [editing, setEditing] = useState<Service | null>(null);
 
-  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
+  // Catálogo: o admin decide em Equipe → Permissões se a recepção
+  // (staff) pode criar/editar/desativar serviços e produtos.
+  const canManage = usePermission("catalog");
 
   useEffect(() => {
     loadServices();
@@ -346,7 +347,6 @@ function EditServiceModal({
 }
 
 function ProdutosTab() {
-  const { data: session } = useSession();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -355,7 +355,9 @@ function ProdutosTab() {
   const [category, setCategory] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
 
-  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
+  // Catálogo: o admin decide em Equipe → Permissões se a recepção
+  // (staff) pode criar/editar/desativar serviços e produtos.
+  const canManage = usePermission("catalog");
 
   useEffect(() => {
     loadProducts();

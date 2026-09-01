@@ -6,8 +6,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { FileText, Plus, Printer, Trash2, X } from "lucide-react";
+import { usePermission } from "@/components/permissions-provider";
 
 type DocType = "atestado" | "laudo" | "presenca" | "receita";
 
@@ -65,10 +65,10 @@ export function ClinicDocuments({
   patientName: string;
   dentists: { id: string; name: string }[];
 }) {
-  const { data: session } = useSession();
   // Emitir/excluir atestado, laudo, receita ou comparecimento é ação
-  // clínica: recepção (staff) só consulta e reimprime o que já existe.
-  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
+  // clínica — o admin decide em Equipe → Permissões se a recepção
+  // (staff) pode emitir ou só consultar/reimprimir o que já existe.
+  const canManage = usePermission("clinicDocuments");
   const [documents, setDocuments] = useState<ClinicDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

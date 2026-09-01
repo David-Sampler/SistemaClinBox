@@ -3,8 +3,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { Plus } from "lucide-react";
+import { usePermission } from "@/components/permissions-provider";
 
 type ClinicalRecord = {
   _id: string;
@@ -22,9 +22,9 @@ export function ClinicalRecords({
   patientId: string;
   dentists: { id: string; name: string }[];
 }) {
-  const { data: session } = useSession();
-  // Prontuário é ação clínica: recepção (staff) acompanha, mas não registra.
-  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
+  // Prontuário é ação clínica — o admin decide em Equipe → Permissões
+  // se a recepção (staff) pode registrar ou só acompanhar.
+  const canManage = usePermission("clinicalRecords");
   const [records, setRecords] = useState<ClinicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

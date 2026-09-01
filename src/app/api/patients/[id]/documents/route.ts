@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { ClinicDocument } from "@/models/ClinicDocument";
 import { clinicDocumentSchema } from "@/lib/validators";
-import { requireSession, requireRole } from "@/lib/api-auth";
+import { requireSession } from "@/lib/api-auth";
+import { requirePermission } from "@/lib/permissions";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (error) return error;
   // Atestado/laudo/receita/comparecimento são documentos que levam a
   // assinatura de um profissional — recepção (staff) não emite.
-  const forbidden = requireRole(session!.user.role, ["admin", "dentist"]);
+  const forbidden = await requirePermission(session!.user.role, "clinicDocuments");
   if (forbidden) return forbidden;
 
   const { id } = await params;
