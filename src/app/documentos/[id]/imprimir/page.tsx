@@ -37,7 +37,7 @@ export default async function PrintDocumentPage({ params }: Props) {
     <div className="min-h-screen bg-porcelain print:bg-white flex flex-col items-center py-10 print:py-0">
       <PrintButton />
 
-      <div className="w-full max-w-[210mm] bg-white shadow-lg print:shadow-none rounded-lg print:rounded-none p-10 sm:p-14 print:p-[20mm] text-ink">
+      <div className="print-doc w-full max-w-[210mm] bg-white shadow-lg print:shadow-none rounded-lg print:rounded-none p-10 sm:p-14 print:p-[20mm] text-ink">
         {/* Cabeçalho da clínica — o mesmo em todos os tipos de documento */}
         <div className="text-center border-b border-line pb-6 mb-8">
           <p className="font-display text-xl font-semibold">ClinBox</p>

@@ -150,25 +150,31 @@ export function OdontogramChart({ patientId }: { patientId: string }) {
         {saving && <span className="text-xs text-blue">Salvando...</span>}
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[720px] bg-surface-soft border border-line rounded-xl py-6 px-4 space-y-3">
+      {/* Na tela, se precisar, rola pro lado (overflow-x-auto + largura
+          mínima). Na impressão isso não existe — papel não tem scroll —
+          então print:min-w-0 deixa a grade encolher, e cada dente fica
+          um pouco menor só no papel (print:...), pra garantir que TODOS
+          os 32 dentes caibam na largura de uma folha A4, sem cortar os
+          últimos (28 e 38) como acontecia antes. */}
+      <div className="overflow-x-auto print:overflow-visible">
+        <div className="min-w-[720px] print:min-w-0 bg-surface-soft border border-line rounded-xl py-6 px-2 sm:px-4 print:py-3 print:px-2 space-y-3">
           {/* Arcada superior */}
-          <div className="flex justify-center gap-1.5">
+          <div className="flex justify-center gap-1.5 print:gap-0.5">
             {UPPER_RIGHT.map((n) => (
               <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} />
             ))}
-            <div className="w-4" />
+            <div className="w-4 print:w-2" />
             {UPPER_LEFT.map((n) => (
               <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} />
             ))}
           </div>
           <div className="border-t border-dashed border-line" />
           {/* Arcada inferior */}
-          <div className="flex justify-center gap-1.5">
+          <div className="flex justify-center gap-1.5 print:gap-0.5">
             {LOWER_RIGHT.map((n) => (
               <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} flip />
             ))}
-            <div className="w-4" />
+            <div className="w-4 print:w-2" />
             {LOWER_LEFT.map((n) => (
               <ToothButton key={n} tooth={teeth[n]} selected={selected === n} onClick={() => setSelected(n)} flip />
             ))}
@@ -262,15 +268,15 @@ function ToothButton({
     <button
       onClick={onClick}
       title={`Dente ${tooth.number} — ${option.label}${facesSuffix}`}
-      className={`group flex flex-col items-center gap-1 shrink-0 rounded-lg px-1.5 py-1.5 transition-all ${
+      className={`group flex flex-col items-center gap-1 shrink-0 rounded-lg px-1.5 py-1.5 print:px-0.5 print:py-0.5 transition-all ${
         selected ? "bg-blue-soft ring-2 ring-blue shadow-sm" : "hover:bg-surface-soft"
       }`}
     >
       <svg
         viewBox="0 0 24 32"
-        width={26}
-        height={34}
-        className={`transition-transform group-hover:scale-110 ${flip ? "rotate-180" : ""} ${
+        // largura/altura em classes (não em atributo fixo) só pra poder
+        // encolher no print:... sem precisar de outro componente
+        className={`w-[26px] h-[34px] print:w-[19px] print:h-[25px] transition-transform group-hover:scale-110 ${flip ? "rotate-180" : ""} ${
           selected ? "scale-125 drop-shadow-md" : ""
         }`}
       >
@@ -281,7 +287,7 @@ function ToothButton({
         />
       </svg>
       <span
-        className={`text-[10px] tabular rounded-full transition-colors ${
+        className={`text-[10px] print:text-[8px] tabular rounded-full transition-colors ${
           selected ? "font-semibold text-white bg-blue px-1.5" : "text-ink-faint"
         }`}
       >

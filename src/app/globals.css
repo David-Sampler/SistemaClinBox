@@ -598,3 +598,12 @@ body {
     transition: none !important;
   }
 }
+
+/* Margem de página pra tudo que é impresso (ficha do paciente, atestado,
+   receita...) — sem isso, cada navegador usa uma margem padrão diferente
+   (geralmente maior), sobrando menos espaço útil na folha e aumentando a
+   chance de conteúdo largo (como o odontograma) ficar sem espaço. */
+@page {
+  size: A4;
+  margin: 12mm;
+}
