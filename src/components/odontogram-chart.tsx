@@ -196,25 +196,27 @@ function ToothButton({
     <button
       onClick={onClick}
       title={`Dente ${tooth.number} — ${option.label}`}
-      className="group flex flex-col items-center gap-1 shrink-0"
+      className={`group flex flex-col items-center gap-1 shrink-0 rounded-lg px-1.5 py-1.5 transition-all ${
+        selected ? "bg-blue-soft ring-2 ring-blue shadow-sm" : "hover:bg-surface-soft"
+      }`}
     >
       <svg
         viewBox="0 0 24 32"
         width={26}
         height={34}
         className={`transition-transform group-hover:scale-110 ${flip ? "rotate-180" : ""} ${
-          selected ? "scale-110 drop-shadow-sm" : ""
+          selected ? "scale-125 drop-shadow-md" : ""
         }`}
       >
         <path
           d={TOOTH_PATH}
-          strokeWidth={selected ? 2 : 1.3}
+          strokeWidth={selected ? 2.2 : 1.3}
           className={option.tooth}
         />
       </svg>
       <span
-        className={`text-[10px] tabular ${
-          selected ? "font-semibold text-blue-strong" : "text-ink-faint"
+        className={`text-[10px] tabular rounded-full transition-colors ${
+          selected ? "font-semibold text-white bg-blue px-1.5" : "text-ink-faint"
         }`}
       >
         {tooth.number}
