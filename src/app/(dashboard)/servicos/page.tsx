@@ -7,8 +7,9 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Plus, Search, Stethoscope, Package, Trash2, Boxes } from "lucide-react";
+import { Pencil, Plus, Search, Stethoscope, Package, Trash2, Boxes } from "lucide-react";
 import { colorFor } from "@/lib/palette";
+import { Modal } from "@/components/modal";
 
 type Service = {
   _id: string;
@@ -124,6 +125,7 @@ function ServicosTab() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [editing, setEditing] = useState<Service | null>(null);
 
   const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
 
@@ -257,12 +259,89 @@ function ServicosTab() {
               price={s.defaultPrice}
               icon={Stethoscope}
               canManage={canManage}
+              onEdit={() => setEditing(s)}
               onDeactivate={() => handleDeactivate(s._id)}
             />
           ))}
         </div>
       )}
+
+      {editing && (
+        <EditServiceModal service={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); loadServices(); }} />
+      )}
     </div>
+  );
+}
+
+function EditServiceModal({
+  service,
+  onClose,
+  onSaved,
+}: {
+  service: Service;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const form = new FormData(e.currentTarget);
+    const rawPrice = form.get("defaultPrice");
+    const payload = {
+      name: form.get("name"),
+      category: form.get("category") || undefined,
+      defaultPrice: rawPrice ? Number(rawPrice) : undefined,
+    };
+
+    const res = await fetch(`/api/services/${service._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    setSaving(false);
+
+    if (!res.ok) {
+      setError("Não foi possível salvar as alterações.");
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Modal title="Editar serviço" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Nome do serviço</label>
+          <input name="name" required defaultValue={service.name} className="input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Categoria</label>
+          <input name="category" defaultValue={service.category} className="input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">
+            Preço padrão <span className="text-ink-faint font-normal">(opcional)</span>
+          </label>
+          <input
+            name="defaultPrice"
+            type="number"
+            min={0}
+            step="0.01"
+            defaultValue={service.defaultPrice}
+            placeholder="Deixe em branco p/ definir na venda"
+            className="input"
+          />
+        </div>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <button type="submit" disabled={saving} className="btn-primary w-full">
+          {saving ? "Salvando..." : "Salvar alterações"}
+        </button>
+      </form>
+    </Modal>
   );
 }
 
@@ -274,6 +353,7 @@ function ProdutosTab() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [editing, setEditing] = useState<Product | null>(null);
 
   const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
 
@@ -418,12 +498,85 @@ function ProdutosTab() {
               stock={p.stock}
               icon={Package}
               canManage={canManage}
+              onEdit={() => setEditing(p)}
               onDeactivate={() => handleDeactivate(p._id)}
             />
           ))}
         </div>
       )}
+
+      {editing && (
+        <EditProductModal product={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); loadProducts(); }} />
+      )}
     </div>
+  );
+}
+
+function EditProductModal({
+  product,
+  onClose,
+  onSaved,
+}: {
+  product: Product;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const form = new FormData(e.currentTarget);
+    const payload = {
+      name: form.get("name"),
+      category: form.get("category") || undefined,
+      price: Number(form.get("price")),
+      stock: Number(form.get("stock") || 0),
+    };
+
+    const res = await fetch(`/api/products/${product._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    setSaving(false);
+
+    if (!res.ok) {
+      setError("Não foi possível salvar as alterações.");
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <Modal title="Editar produto" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Nome do produto</label>
+          <input name="name" required defaultValue={product.name} className="input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Categoria</label>
+          <input name="category" defaultValue={product.category} className="input" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Preço</label>
+            <input name="price" type="number" min={0} step="0.01" required defaultValue={product.price} className="input" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Estoque</label>
+            <input name="stock" type="number" min={0} step="1" required defaultValue={product.stock} className="input" />
+          </div>
+        </div>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <button type="submit" disabled={saving} className="btn-primary w-full">
+          {saving ? "Salvando..." : "Salvar alterações"}
+        </button>
+      </form>
+    </Modal>
   );
 }
 
@@ -437,6 +590,7 @@ function CatalogCard({
   stock,
   icon: Icon,
   canManage,
+  onEdit,
   onDeactivate,
   index,
 }: {
@@ -446,6 +600,7 @@ function CatalogCard({
   stock?: number;
   icon: React.ElementType;
   canManage: boolean;
+  onEdit: () => void;
   onDeactivate: () => void;
   index: number;
 }) {
@@ -465,13 +620,14 @@ function CatalogCard({
       style={{ animationDelay: `${Math.min(index, 11) * 25}ms` }}
     >
       {canManage && (
-        <button
-          onClick={onDeactivate}
-          className="absolute top-3 right-3 text-ink-faint hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Desativar"
-        >
-          <Trash2 size={14} />
-        </button>
+        <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onClick={onEdit} className="text-ink-faint hover:text-blue" aria-label="Editar">
+            <Pencil size={14} />
+          </button>
+          <button onClick={onDeactivate} className="text-ink-faint hover:text-danger" aria-label="Desativar">
+            <Trash2 size={14} />
+          </button>
+        </div>
       )}
 
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${bg} ${text}`}>

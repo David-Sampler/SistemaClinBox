@@ -185,6 +185,18 @@ export const userSchema = z.object({
   phone: z.string().optional(),
 });
 
+// Edição de um usuário já existente: tudo opcional (o formulário manda só
+// o que mudou), e sem senha aqui — trocar senha é um fluxo separado,
+// não faz parte de editar cadastro.
+export const userUpdateSchema = z.object({
+  name: z.string().min(2, "Nome muito curto").optional(),
+  email: z.string().email("E-mail inválido").optional(),
+  role: z.enum(["admin", "dentist", "staff"]).optional(),
+  cro: z.string().optional(),
+  phone: z.string().optional(),
+  active: z.boolean().optional(),
+});
+
 // Documentos que a clínica emite pro paciente: atestado, laudo,
 // declaração de comparecimento e receita. "content" é o texto corrido
 // (atestado/laudo/presença); receita usa "items" em vez disso — por

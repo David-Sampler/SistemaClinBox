@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { UserAvatar } from "@/components/user-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
+import { Modal } from "@/components/modal";
 
 type Appointment = {
   _id: string;
@@ -623,35 +624,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="block text-xs font-medium text-ink-muted mb-1">{label}</label>
       {children}
-    </div>
-  );
-}
-
-function Modal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="anim-scale-in relative bg-surface rounded-xl border border-line shadow-xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-soft transition-colors"
-            aria-label="Fechar"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        {children}
-      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Plus } from "lucide-react";
 
 type ClinicalRecord = {
@@ -21,6 +22,9 @@ export function ClinicalRecords({
   patientId: string;
   dentists: { id: string; name: string }[];
 }) {
+  const { data: session } = useSession();
+  // Prontuário é ação clínica: recepção (staff) acompanha, mas não registra.
+  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
   const [records, setRecords] = useState<ClinicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -70,15 +74,17 @@ export function ClinicalRecords({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-muted">Histórico de procedimentos realizados</p>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1 text-sm text-blue hover:underline"
-        >
-          <Plus size={14} /> Novo registro
-        </button>
+        {canManage && (
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="flex items-center gap-1 text-sm text-blue hover:underline"
+          >
+            <Plus size={14} /> Novo registro
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {showForm && canManage && (
         <form
           onSubmit={handleSubmit}
           className="bg-surface-soft border border-line rounded-lg p-4 space-y-3"

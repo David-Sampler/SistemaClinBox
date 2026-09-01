@@ -30,18 +30,24 @@ export function WhatsAppLink({
   const href = toWhatsAppHref(phone);
   if (!href) return null;
 
+  // É um <button>, não um <a>, de propósito: em várias telas esse ícone
+  // fica dentro de outro link clicável (a linha do paciente na lista, por
+  // exemplo) — um <a> dentro de outro <a> é HTML inválido e quebra a
+  // hidratação do React. window.open faz o mesmo efeito sem esse problema.
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        window.open(href, "_blank", "noopener,noreferrer");
+      }}
       title={`Chamar no WhatsApp: ${phone}`}
       aria-label={`Chamar ${phone} no WhatsApp`}
       className={`inline-flex items-center justify-center rounded-full bg-success-soft text-success hover:bg-success hover:text-white transition-colors shrink-0 ${className}`}
       style={{ width: size + 12, height: size + 12 }}
     >
       <MessageCircle size={size} strokeWidth={2} />
-    </a>
+    </button>
   );
 }

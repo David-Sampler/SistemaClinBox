@@ -4,6 +4,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 type ToothStatus =
   | "sadio"
@@ -56,6 +57,9 @@ function statusOption(status: ToothStatus) {
 }
 
 export function OdontogramChart({ patientId }: { patientId: string }) {
+  const { data: session } = useSession();
+  // Odontograma é ação clínica: recepção (staff) acompanha, mas não registra.
+  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
   const [teeth, setTeeth] = useState<Record<string, Tooth>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,7 +108,9 @@ export function OdontogramChart({ patientId }: { patientId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-ink-muted">Clique em um dente para registrar a situação clínica.</p>
+        <p className="text-sm text-ink-muted">
+          {canManage ? "Clique em um dente para registrar a situação clínica." : "Clique em um dente para ver a situação clínica."}
+        </p>
         {saving && <span className="text-xs text-blue">Salvando...</span>}
       </div>
 
@@ -143,8 +149,8 @@ export function OdontogramChart({ patientId }: { patientId: string }) {
         ))}
       </div>
 
-      {/* Painel de edição do dente selecionado */}
-      {selected && teeth[selected] && (
+      {/* Painel de edição do dente selecionado — só quem pode registrar */}
+      {canManage && selected && teeth[selected] && (
         <div className="bg-surface-soft border border-line rounded-lg p-4">
           <p className="font-medium text-ink mb-3">Dente {selected}</p>
           <div className="flex flex-wrap gap-2">

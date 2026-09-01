@@ -6,6 +6,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { FileText, Plus, Printer, Trash2, X } from "lucide-react";
 
 type DocType = "atestado" | "laudo" | "presenca" | "receita";
@@ -64,6 +65,10 @@ export function ClinicDocuments({
   patientName: string;
   dentists: { id: string; name: string }[];
 }) {
+  const { data: session } = useSession();
+  // Emitir/excluir atestado, laudo, receita ou comparecimento é ação
+  // clínica: recepção (staff) só consulta e reimprime o que já existe.
+  const canManage = session?.user?.role === "admin" || session?.user?.role === "dentist";
   const [documents, setDocuments] = useState<ClinicDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -162,13 +167,15 @@ export function ClinicDocuments({
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-muted">Atestados, laudos, comparecimento e receitas emitidos para este paciente.</p>
-        <button onClick={() => setShowForm((v) => !v)} className="btn-primary">
-          {showForm ? <X size={16} /> : <Plus size={16} />}
-          {showForm ? "Cancelar" : "Novo documento"}
-        </button>
+        {canManage && (
+          <button onClick={() => setShowForm((v) => !v)} className="btn-primary">
+            {showForm ? <X size={16} /> : <Plus size={16} />}
+            {showForm ? "Cancelar" : "Novo documento"}
+          </button>
+        )}
       </div>
 
-      {showForm && (
+      {showForm && canManage && (
         <form onSubmit={handleSubmit} className="bg-surface-soft border border-line rounded-xl p-5 space-y-4">
           <div className="flex flex-wrap gap-1.5">
             {typeOptions.map((t) => (
@@ -302,13 +309,15 @@ export function ClinicDocuments({
               >
                 <Printer size={13} /> Imprimir
               </Link>
-              <button
-                onClick={() => handleDelete(doc._id)}
-                className="text-ink-faint hover:text-danger shrink-0"
-                aria-label="Excluir documento"
-              >
-                <Trash2 size={14} />
-              </button>
+              {canManage && (
+                <button
+                  onClick={() => handleDelete(doc._id)}
+                  className="text-ink-faint hover:text-danger shrink-0"
+                  aria-label="Excluir documento"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </li>
           ))}
         </ul>

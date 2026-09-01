@@ -1,13 +1,17 @@
-// Página de EQUIPE: lista os usuários do sistema e permite ao administrador
-// cadastrar novos (dentistas, recepção, outros administradores).
-// Reforça que o sistema é multiusuário: várias pessoas usam com papéis diferentes.
+// Página de EQUIPE: lista os usuários do sistema, permite ao administrador
+// cadastrar novos, editar papel/dados e desativar (dentistas, recepção,
+// outros administradores). Reforça que o sistema é multiusuário: várias
+// pessoas usam com papéis diferentes — é aqui que o admin decide quem
+// tem qual papel (veja também as regras de acesso: staff não mexe em
+// prontuário/odontograma/atestados, só admin/dentista podem).
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, UserX } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
+import { Modal } from "@/components/modal";
 
 type Member = {
   _id: string;
@@ -29,6 +33,7 @@ export default function EquipePage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const isAdmin = session?.user?.role === "admin";
@@ -73,6 +78,12 @@ export default function EquipePage() {
     (e.target as HTMLFormElement).reset();
     setShowForm(false);
     loadMembers();
+  }
+
+  async function handleDeactivate(id: string) {
+    if (!confirm("Desativar este usuário? Ele perde o acesso ao sistema, mas o histórico dele é mantido.")) return;
+    setMembers((prev) => prev.filter((m) => m._id !== id));
+    await fetch(`/api/users/${id}`, { method: "DELETE" });
   }
 
   return (
@@ -164,11 +175,125 @@ export default function EquipePage() {
                   {roleLabels[m.role] ?? m.role}
                 </span>
                 <WhatsAppLink phone={m.phone} />
+                {isAdmin && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => setEditing(m)}
+                      className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-surface hover:text-blue transition-colors"
+                      aria-label="Editar usuário"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    {m._id !== session?.user?.id && (
+                      <button
+                        onClick={() => handleDeactivate(m._id)}
+                        className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
+                        aria-label="Desativar usuário"
+                      >
+                        <UserX size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {editing && (
+        <EditMemberModal
+          member={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            loadMembers();
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function EditMemberModal({
+  member,
+  onClose,
+  onSaved,
+}: {
+  member: Member;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+
+    const form = new FormData(e.currentTarget);
+    const payload = {
+      name: form.get("name"),
+      email: form.get("email"),
+      role: form.get("role"),
+      cro: form.get("cro") || undefined,
+      phone: form.get("phone") || undefined,
+    };
+
+    const res = await fetch(`/api/users/${member._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    setSaving(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data.error === "string" ? data.error : "Não foi possível salvar as alterações.");
+      return;
+    }
+
+    onSaved();
+  }
+
+  return (
+    <Modal title="Editar usuário" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Nome</label>
+          <input name="name" required defaultValue={member.name} className="input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">E-mail</label>
+          <input name="email" type="email" required defaultValue={member.email} className="input" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1">Papel</label>
+          <select name="role" required defaultValue={member.role} className="input">
+            <option value="dentist">Dentista</option>
+            <option value="staff">Recepção</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-ink-muted mb-1">CRO</label>
+            <input name="cro" defaultValue={member.cro} className="input" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-muted mb-1">Telefone</label>
+            <input name="phone" defaultValue={member.phone} placeholder="(00) 00000-0000" className="input" />
+          </div>
+        </div>
+
+        {error && <p className="text-sm text-danger">{error}</p>}
+
+        <button type="submit" disabled={saving} className="btn-primary w-full">
+          {saving ? "Salvando..." : "Salvar alterações"}
+        </button>
+      </form>
+    </Modal>
   );
 }
