@@ -124,49 +124,58 @@
 }
 
 /* ============================================================
-   SEGUNDO TEMA: "Clínica Moderna" — visual mais claro e colorido,
-   barra lateral branca (em vez de escura) com um destaque violeta
-   suave. Escolhido pelo usuário no seletor de tema (ver ThemeToggle).
-   Troca só os tokens de cor — o resto do sistema (componentes,
-   espaçamento, tipografia) continua exatamente igual.
+   SEGUNDO TEMA: "Roxo Moderno" (antes "Clínica Moderna") — visual
+   claro, barra lateral branca (em vez de escura), com a paleta de
+   marca trazida pelo usuário em 2026-09-01 (referência: Pinterest,
+   "Clustr Studio — Colour Palette | Branding"):
+     Royal Purple #6045F4 · Neon Mint #53E6D4 ·
+     Soft Gray #EBEBED · Carbon Black #0F1417
+   Royal Purple vira a cor de marca (--blue, por reaproveitar o nome
+   do token base), Neon Mint o destaque secundário (--brass, mesma
+   lógica), Soft Gray as superfícies/linhas, Carbon Black o texto.
+   Escolhido pelo usuário no seletor de tema (ver ThemeToggle). Troca
+   só os tokens de cor — o resto do sistema continua igual.
    ============================================================ */
 :root[data-palette="clinic"] {
-  --porcelain: #fafafc;
+  --porcelain: #f7f7f9;
   --surface: #ffffff;
-  --surface-soft: #f5f4fb;
+  --surface-soft: #f1f0f6;
 
-  --ink: #24232e;
-  --ink-muted: #6b6a78;
-  --ink-faint: #a3a2ae;
+  --ink: #14121b;
+  --ink-muted: #67637a;
+  --ink-faint: #a19dae;
 
-  --line: #ebeaf3;
-  --line-soft: #f3f2f9;
+  --line: #e8e6f0;
+  --line-soft: #f2f1f7;
 
-  --blue: #6c5ce0;
-  --blue-strong: #5344c4;
-  --blue-soft: #edeafc;
+  /* Royal Purple #6045F4 */
+  --blue: #6045f4;
+  --blue-strong: #4a32d1;
+  --blue-soft: #ece7fe;
 
-  --brass: #e08a4f;
-  --brass-soft: #fbead9;
+  /* Neon Mint #53E6D4, escurecido pra "brass" (texto/ícone) continuar
+     legível — o tom vivo original fica no "-soft" */
+  --brass: #0f9d8a;
+  --brass-soft: #d9f7f1;
 
-  --success: #3fa772;
-  --success-soft: #e1f5ea;
-  --warning: #c08a1e;
-  --warning-soft: #fbf0d9;
-  --danger: #d65c56;
-  --danger-soft: #fbe4e2;
-  --neutral-soft: #f1f0f7;
+  --success: #1f9d7c;
+  --success-soft: #dcf5ec;
+  --warning: #b9770f;
+  --warning-soft: #f7e8cf;
+  --danger: #d6483f;
+  --danger-soft: #fbe1de;
+  --neutral-soft: #f0eff5;
 
   /* Aqui a barra lateral é CLARA, ao contrário do tema "Azul-saúde"
      (onde ela é fixa e escura) — parte da identidade deste tema. */
   --sidebar-bg: #ffffff;
-  --sidebar-active: #eeeafb;
-  --sidebar-text: #55545f;
-  --sidebar-text-muted: #9b9aa6;
-  --sidebar-active-text: #5f52c7;
-  --sidebar-line: #eeedf5;
-  --sidebar-hover: #f6f5fb;
-  --sidebar-heading: #24232e;
+  --sidebar-active: #ece7fe;
+  --sidebar-text: #57536a;
+  --sidebar-text-muted: #9d99ab;
+  --sidebar-active-text: #5636e0;
+  --sidebar-line: #ece9f4;
+  --sidebar-hover: #f7f6fb;
+  --sidebar-heading: #14121b;
 }
 
 /* ============================================================
