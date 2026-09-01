@@ -43,7 +43,7 @@ export function UserMenu({ userId, userName, userRole }: { userId: string; userN
   }
 
   return (
-    <div className="relative flex items-center justify-end gap-3 px-4 md:px-8 py-3 border-b border-line bg-surface">
+    <div className="print:hidden relative flex items-center justify-end gap-3 px-4 md:px-8 py-3 border-b border-line bg-surface">
       <div className="text-right leading-tight">
         <p className="text-sm font-medium text-ink">{userName}</p>
         <p className="text-xs text-ink-muted">{roleLabels[userRole] ?? userRole}</p>
