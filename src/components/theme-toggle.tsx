@@ -1,5 +1,5 @@
 // Botão que alterna entre os três temas visuais do sistema:
-// "Azul-saúde" (padrão) → "Roxo Moderno" (claro, roxo + verde-menta) →
+// "Azul-saúde" (padrão) → "Clínica Moderna" (claro e colorido) →
 // "Verde-consultório" (verde-clínico, barra escura) → volta pro início.
 // A escolha fica salva no navegador (localStorage) — cada pessoa da
 // equipe pode usar o tema que preferir, sem afetar as outras.
@@ -17,7 +17,7 @@ const ORDER: PaletteName[] = ["saude", "clinic", "green"];
 
 const paletteLabels: Record<PaletteName, string> = {
   saude: "Tema: Azul-saúde",
-  clinic: "Tema: Roxo moderno",
+  clinic: "Tema: Clínica moderna",
   green: "Tema: Verde-consultório",
 };
 
