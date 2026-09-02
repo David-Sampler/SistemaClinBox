@@ -32,5 +32,10 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // manifest.webmanifest/icon/apple-icon precisam ficar de fora do login
+  // obrigatório: são os arquivos que o navegador/celular busca pra saber
+  // se pode oferecer "Instalar app" (ver src/app/manifest.ts) — teriam
+  // que funcionar mesmo pra quem ainda não fez login, senão o Chrome/iOS
+  // recebe a página de login no lugar do manifesto e a instalação falha.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|icon|apple-icon).*)"],
 };

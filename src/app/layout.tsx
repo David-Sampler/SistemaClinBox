@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import Script from "next/script";
 import { Providers } from "@/components/providers";
@@ -15,6 +15,21 @@ const geist = Geist({
 export const metadata: Metadata = {
   title: "ClinBox",
   description: "Sistema de gestão para clínicas odontológicas",
+  // "appleWebApp" é o que faz o iOS tratar o ClinBox como um app de
+  // verdade quando alguém usa "Adicionar à Tela de Início" no Safari:
+  // some a barra do navegador e usa o ícone de apple-icon.tsx. O iOS não
+  // lê o manifest.json pra isso, só esses metadados específicos.
+  appleWebApp: {
+    title: "ClinBox",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+// Cor da barra do navegador/status bar quando o sistema é aberto — mesmo
+// navy fixo do painel de marca do login e da tela de abertura, pra ficar
+// consistente também quando instalado como app (ver manifest.ts).
+export const viewport: Viewport = {
+  themeColor: "#00203f",
 };
 
 // Roda antes da página pintar na tela: lê o tema salvo no navegador e
