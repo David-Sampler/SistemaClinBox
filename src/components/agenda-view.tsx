@@ -6,7 +6,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Pencil, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import { addDays, format, isSameDay, isToday, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { StatusBadge } from "@/components/status-badge";
@@ -210,6 +210,16 @@ export function AgendaView({
       body: JSON.stringify({ status }),
     });
     setSelected((s) => (s && s._id === id ? { ...s, status } : s));
+    loadAppointments();
+  }
+
+  // Diferente de "Cancelado" (só um status, a consulta continua visível
+  // riscada na agenda) — isso tira a consulta do banco de vez, pra quando
+  // ela foi um engano e nem deveria contar como histórico.
+  async function handleDeleteAppointment(id: string) {
+    if (!confirm("Excluir esta consulta? Essa ação não pode ser desfeita.")) return;
+    await fetch(`/api/appointments/${id}`, { method: "DELETE" });
+    setSelected(null);
     loadAppointments();
   }
 
@@ -660,6 +670,13 @@ export function AgendaView({
                   </button>
                 ))}
               </div>
+
+              <button
+                onClick={() => handleDeleteAppointment(selected._id)}
+                className="mt-6 w-full flex items-center justify-center gap-1.5 text-sm text-danger border border-danger/20 bg-danger-soft rounded-lg py-2 hover:opacity-80 transition-opacity"
+              >
+                <Trash2 size={14} /> Excluir consulta
+              </button>
             </>
           )}
         </SidePanel>

@@ -5,7 +5,11 @@ import { appointmentSchema } from "@/lib/validators";
 import { requireSession } from "@/lib/api-auth";
 
 // Rota de API de UMA consulta específica: editar (PUT, usado para trocar
-// status ou reagendar) e cancelar (DELETE — apenas marca status "cancelado").
+// status ou reagendar) e excluir (DELETE — remove de vez do banco).
+// "Cancelado" (status) e "excluir" (DELETE) são coisas diferentes de
+// propósito: cancelar mantém a consulta visível na agenda (riscada, pra
+// manter o histórico de que existiu e foi cancelada); excluir tira do
+// banco de vez, pra quando a consulta foi um engano e nem deveria contar.
 type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -36,7 +40,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const { id } = await params;
   await connectDB();
-  const appointment = await Appointment.findByIdAndUpdate(id, { status: "cancelado" }, { new: true });
+  const appointment = await Appointment.findByIdAndDelete(id);
   if (!appointment) return NextResponse.json({ error: "Agendamento não encontrado" }, { status: 404 });
 
   return NextResponse.json({ ok: true });
