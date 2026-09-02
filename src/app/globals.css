@@ -556,6 +556,47 @@ body {
     0 1px 1px color-mix(in srgb, black 6%, transparent);
 }
 
+/* Tela de abertura do sistema: some sozinha por CSS puro (sem
+   JavaScript), assim não há flash do conteúdo de baixo antes da
+   animação começar. Aparece por um instante toda vez que o sistema é
+   carregado de verdade (recarregar a página, abrir uma aba nova) —
+   como o layout raiz não recarrega em navegações internas do Next.js,
+   ela não repete ao trocar de tela dentro do sistema, só na "abertura".
+   Usa o mesmo navy fixo (#00203f) do painel de marca do login, pra
+   parecer uma continuação da mesma identidade visual. */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  pointer-events: none; /* nunca atrapalha clique, mesmo antes de sumir */
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 0%, #1f6fb0 0%, transparent 60%),
+    linear-gradient(160deg, #00203f 0%, #001830 60%, #001120 100%);
+  animation: splash-out 1.7s ease-in-out forwards;
+}
+.splash-screen-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  animation: splash-logo-in 0.5s ease-out both;
+}
+@keyframes splash-logo-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes splash-out {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen { animation-duration: 0.01s; }
+  .splash-screen-logo { animation: none; }
+}
+
 /* Entrada de modais e painéis laterais */
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.97); }

@@ -44,6 +44,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
+        {/* Tela de abertura: puro CSS (ver .splash-screen em globals.css),
+            some sozinha depois de um instante — não precisa de JS nem
+            de estado React, então nunca atrasa a página de verdade. */}
+        <div className="splash-screen" aria-hidden="true">
+          <div className="splash-screen-logo">
+            <span className="login-logo-badge w-12 h-12 rounded-xl text-white flex items-center justify-center font-display font-semibold text-xl">
+              C
+            </span>
+            <span className="font-display text-2xl font-semibold text-white">ClinBox</span>
+          </div>
+        </div>
         <Providers>{children}</Providers>
       </body>
     </html>
