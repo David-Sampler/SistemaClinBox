@@ -1,23 +1,14 @@
-// Formulário de EDIÇÃO dos dados cadastrais e da anamnese de um paciente
-// já existente — é aqui que dá pra completar informações que faltaram no
-// cadastro inicial (ex: preencheram só nome e telefone na correria da
-// recepção, e depois o dentista completa a anamnese durante a consulta).
+// Formulário de EDIÇÃO dos dados cadastrais de um paciente já existente
+// (dados pessoais, contato de emergência, endereço). A anamnese NÃO mora
+// mais aqui — tem sua própria aba/formulário (veja anamnesis-form.tsx),
+// pra separar "cadastro rápido" de "histórico clínico".
 "use client";
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCPF } from "@/lib/cpf";
 import { formatPhone } from "@/lib/phone";
-
-const CONDITION_ITEMS: { key: string; label: string }[] = [
-  { key: "isPregnant", label: "Gestante" },
-  { key: "isSmoker", label: "Fumante" },
-  { key: "hasDiabetes", label: "Diabetes" },
-  { key: "hasHypertension", label: "Pressão alta (hipertensão)" },
-  { key: "hasHeartCondition", label: "Cardiopatia" },
-  { key: "hasBleedingDisorder", label: "Problema de coagulação/sangramento" },
-  { key: "hadAnesthesiaReaction", label: "Já teve reação a anestésico" },
-];
+import type { MedicalHistory } from "@/lib/anamnesis";
 
 type FieldErrors = Record<string, string[]>;
 
@@ -39,19 +30,7 @@ export type EditablePatient = {
     state?: string;
     zip?: string;
   };
-  medicalHistory?: {
-    allergies?: string;
-    medications?: string;
-    conditions?: string;
-    notes?: string;
-    isPregnant?: boolean;
-    isSmoker?: boolean;
-    hasDiabetes?: boolean;
-    hasHypertension?: boolean;
-    hasHeartCondition?: boolean;
-    hasBleedingDisorder?: boolean;
-    hadAnesthesiaReaction?: boolean;
-  };
+  medicalHistory?: MedicalHistory;
 };
 
 export function PatientEditForm({ patient }: { patient: EditablePatient }) {
@@ -63,8 +42,6 @@ export function PatientEditForm({ patient }: { patient: EditablePatient }) {
   const [cpf, setCpf] = useState(patient.cpf ?? "");
   const [phone, setPhone] = useState(patient.phone ?? "");
   const [emergencyPhone, setEmergencyPhone] = useState(patient.emergencyContact?.phone ?? "");
-
-  const mh = patient.medicalHistory;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -94,13 +71,10 @@ export function PatientEditForm({ patient }: { patient: EditablePatient }) {
         state: form.get("state") || undefined,
         zip: form.get("zip") || undefined,
       },
-      medicalHistory: {
-        allergies: form.get("allergies") || undefined,
-        medications: form.get("medications") || undefined,
-        conditions: form.get("conditions") || undefined,
-        notes: form.get("notes") || undefined,
-        ...Object.fromEntries(CONDITION_ITEMS.map((c) => [c.key, form.get(c.key) === "on"])),
-      },
+      // "medicalHistory" não vai mais nesse payload de propósito — esse
+      // formulário só mexe em dados cadastrais. Enviar um objeto vazio
+      // reconstruído a partir de inputs que não existem mais aqui
+      // apagaria a anamnese já preenchida na aba própria a cada salvamento.
     };
 
     const res = await fetch(`/api/patients/${patient._id}`, {
@@ -201,40 +175,6 @@ export function PatientEditForm({ patient }: { patient: EditablePatient }) {
           <Field label="Cidade" name="city" defaultValue={patient.address?.city} />
           <Field label="Estado" name="state" defaultValue={patient.address?.state} placeholder="UF" />
           <Field label="CEP" name="zip" defaultValue={patient.address?.zip} placeholder="00000-000" />
-        </div>
-      </fieldset>
-
-      <fieldset className="space-y-4 border-t border-line-soft pt-4">
-        <legend className="font-semibold text-ink mb-1">Histórico médico (anamnese)</legend>
-        <div>
-          <p className="text-sm font-medium text-ink mb-2">Condições relevantes para o atendimento</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {CONDITION_ITEMS.map((c) => (
-              <label
-                key={c.key}
-                className="flex items-center gap-2 text-sm text-ink-muted rounded-lg border border-line px-3 py-2 hover:bg-surface-soft cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  name={c.key}
-                  defaultChecked={Boolean(mh?.[c.key as keyof typeof mh])}
-                  className="accent-blue"
-                />
-                {c.label}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Alergias" name="allergies" defaultValue={mh?.allergies} />
-          <Field label="Medicamentos em uso" name="medications" defaultValue={mh?.medications} />
-          <Field
-            label="Outras condições de saúde"
-            name="conditions"
-            defaultValue={mh?.conditions}
-            className="sm:col-span-2"
-          />
-          <Field label="Observações gerais" name="notes" defaultValue={mh?.notes} className="sm:col-span-2" />
         </div>
       </fieldset>
 

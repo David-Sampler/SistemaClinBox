@@ -6,19 +6,6 @@ import { useRouter } from "next/navigation";
 import { formatCPF } from "@/lib/cpf";
 import { formatPhone } from "@/lib/phone";
 
-// Itens do checklist de anamnese — condições que mudam a forma como o
-// dentista conduz o atendimento (anestesia, sangramento, cicatrização).
-// Cada um vira um campo boolean em medicalHistory (veja src/models/Patient.ts).
-const CONDITION_ITEMS: { key: string; label: string }[] = [
-  { key: "isPregnant", label: "Gestante" },
-  { key: "isSmoker", label: "Fumante" },
-  { key: "hasDiabetes", label: "Diabetes" },
-  { key: "hasHypertension", label: "Pressão alta (hipertensão)" },
-  { key: "hasHeartCondition", label: "Cardiopatia" },
-  { key: "hasBleedingDisorder", label: "Problema de coagulação/sangramento" },
-  { key: "hadAnesthesiaReaction", label: "Já teve reação a anestésico" },
-];
-
 type FieldErrors = Record<string, string[]>;
 
 export default function NewPatientPage() {
@@ -58,13 +45,10 @@ export default function NewPatientPage() {
         state: form.get("state") || undefined,
         zip: form.get("zip") || undefined,
       },
-      medicalHistory: {
-        allergies: form.get("allergies") || undefined,
-        medications: form.get("medications") || undefined,
-        conditions: form.get("conditions") || undefined,
-        notes: form.get("notes") || undefined,
-        ...Object.fromEntries(CONDITION_ITEMS.map((c) => [c.key, form.get(c.key) === "on"])),
-      },
+      // A anamnese não entra mais aqui — vira o primeiro passo depois que
+      // o paciente já está cadastrado, na aba "Anamnese" da própria ficha
+      // (ver src/components/anamnesis-form.tsx). Isso deixa o cadastro
+      // rápido pra quem está na recepção, sem travar em campos clínicos.
     };
 
     const res = await fetch("/api/patients", {
@@ -95,7 +79,7 @@ export default function NewPatientPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-ink">Novo paciente</h1>
-        <p className="text-ink-muted">Preencha os dados cadastrais e o histórico médico</p>
+        <p className="text-ink-muted">Preencha os dados cadastrais — a anamnese é feita depois, na ficha do paciente</p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-surface rounded-xl border border-line p-6 space-y-6">
@@ -170,32 +154,6 @@ export default function NewPatientPage() {
             <Field label="Cidade" name="city" />
             <Field label="Estado" name="state" placeholder="UF" />
             <Field label="CEP" name="zip" placeholder="00000-000" />
-          </div>
-        </fieldset>
-
-        <fieldset className="space-y-4 border-t border-line-soft pt-4">
-          <legend className="font-semibold text-ink mb-1">Histórico médico (anamnese)</legend>
-
-          <div>
-            <p className="text-sm font-medium text-ink mb-2">Condições relevantes para o atendimento</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-              {CONDITION_ITEMS.map((c) => (
-                <label
-                  key={c.key}
-                  className="flex items-center gap-2 text-sm text-ink-muted rounded-lg border border-line px-3 py-2 hover:bg-surface-soft cursor-pointer"
-                >
-                  <input type="checkbox" name={c.key} className="accent-blue" />
-                  {c.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Alergias" name="allergies" />
-            <Field label="Medicamentos em uso" name="medications" />
-            <Field label="Outras condições de saúde" name="conditions" className="sm:col-span-2" />
-            <Field label="Observações gerais" name="notes" className="sm:col-span-2" />
           </div>
         </fieldset>
 

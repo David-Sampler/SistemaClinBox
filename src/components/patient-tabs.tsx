@@ -1,5 +1,5 @@
-// Controla a troca entre as abas "Odontograma", "Prontuário", "Documentos",
-// "Financeiro" e "Dados" dentro da página de detalhe do paciente.
+// Controla a troca entre as abas "Odontograma", "Anamnese", "Prontuário",
+// "Documentos", "Financeiro" e "Dados" dentro da página de detalhe do paciente.
 // A aba atual fica na URL (?tab=...) — assim um botão de atalho (ex: "Editar
 // dados" no topo da ficha) pode linkar direto pra aba certa, e o F5 não
 // perde o lugar onde a pessoa estava.
@@ -12,10 +12,11 @@ import { ClinicalRecords } from "@/components/clinical-records";
 import { PatientDocuments } from "@/components/patient-documents";
 import { PatientFinance } from "@/components/patient-finance";
 import { PatientEditForm, type EditablePatient } from "@/components/patient-edit-form";
+import { AnamnesisForm } from "@/components/anamnesis-form";
 import { ClinicDocuments } from "@/components/clinic-documents";
 
-type Tab = "odontograma" | "prontuario" | "documentos" | "emitir" | "financeiro" | "dados";
-const TAB_IDS: Tab[] = ["odontograma", "prontuario", "documentos", "emitir", "financeiro", "dados"];
+type Tab = "odontograma" | "anamnese" | "prontuario" | "documentos" | "emitir" | "financeiro" | "dados";
+const TAB_IDS: Tab[] = ["odontograma", "anamnese", "prontuario", "documentos", "emitir", "financeiro", "dados"];
 
 export function PatientTabs({
   patientId,
@@ -45,11 +46,12 @@ export function PatientTabs({
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "odontograma", label: "Odontograma" },
+    { id: "anamnese", label: "Anamnese" },
     { id: "prontuario", label: "Prontuário" },
     { id: "documentos", label: "Documentos" },
     { id: "emitir", label: "Atestados e receitas" },
     { id: "financeiro", label: "Financeiro" },
-    { id: "dados", label: "Dados e anamnese" },
+    { id: "dados", label: "Dados" },
   ];
 
   function selectTab(id: Tab) {
@@ -77,6 +79,7 @@ export function PatientTabs({
 
       <div className="p-5">
         {tab === "odontograma" && <OdontogramChart patientId={patientId} />}
+        {tab === "anamnese" && <AnamnesisForm patientId={patientId} medicalHistory={patient.medicalHistory} />}
         {tab === "prontuario" && <ClinicalRecords patientId={patientId} dentists={dentists} />}
         {tab === "documentos" && <PatientDocuments patientId={patientId} />}
         {tab === "emitir" && <ClinicDocuments patientId={patientId} patientName={patient.name} dentists={dentists} />}

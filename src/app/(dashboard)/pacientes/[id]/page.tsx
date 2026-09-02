@@ -27,7 +27,9 @@ import {
   IdCard,
   ShieldPlus,
   Stethoscope,
+  Info,
 } from "lucide-react";
+import { hasAnamnesisData } from "@/lib/anamnesis";
 import { connectDB } from "@/lib/db";
 import { Patient } from "@/models/Patient";
 import { User } from "@/models/User";
@@ -140,6 +142,10 @@ export default async function PatientDetailPage({ params }: Props) {
   // panos, mas como as abas ficam mais abaixo na página (depois dos
   // cartões e indicadores), na prática parecia que "não acontecia nada".
   const editHref = `/pacientes/${id}?tab=dados#patient-tabs`;
+  // Anamnese agora tem aba própria (separada do cadastro) — cada cartão
+  // aponta pro atalho de edição certo em vez de os dois caírem em "dados".
+  const anamneseHref = `/pacientes/${id}?tab=anamnese#patient-tabs`;
+  const anamnesisDone = hasAnamnesisData(mh);
 
   return (
     <div className="space-y-6">
@@ -232,11 +238,27 @@ export default async function PatientDetailPage({ params }: Props) {
           )}
         </InfoCard>
 
-        <InfoCard icon={Stethoscope} title="Anamnese" editHref={editHref}>
-          <InfoItem label="Alergias" value={patient.medicalHistory?.allergies} />
-          <InfoItem label="Medicamentos em uso" value={patient.medicalHistory?.medications} />
-          <InfoItem label="Outras condições" value={patient.medicalHistory?.conditions} />
-          <InfoItem label="Observações" value={patient.medicalHistory?.notes} />
+        <InfoCard icon={Stethoscope} title="Anamnese" editHref={anamneseHref}>
+          {anamnesisDone ? (
+            <>
+              <InfoItem label="Alergias" value={patient.medicalHistory?.allergies} />
+              <InfoItem label="Medicamentos em uso" value={patient.medicalHistory?.medications} />
+              <InfoItem label="Outras condições" value={patient.medicalHistory?.conditions} />
+              <InfoItem label="Observações" value={patient.medicalHistory?.notes} />
+            </>
+          ) : (
+            <>
+              <Link
+                href={anamneseHref}
+                className="print:hidden inline-flex items-center gap-1.5 text-sm text-blue-strong hover:underline"
+              >
+                <Info size={14} />
+                Nenhuma anamnese feita
+              </Link>
+              {/* Na impressão o link não serve de nada — mostra como texto simples. */}
+              <p className="hidden print:block text-sm text-ink-muted">Nenhuma anamnese feita.</p>
+            </>
+          )}
         </InfoCard>
       </div>
 
