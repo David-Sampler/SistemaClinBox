@@ -2,9 +2,8 @@
 // para exibir a imagem ou abrir o PDF no navegador.
 // Endereço: /api/attachments/ID/file — usado direto num <img src="..."> ou <a href="...">.
 import { NextRequest, NextResponse } from "next/server";
-import { Readable } from "stream";
 import { connectDB } from "@/lib/db";
-import { getBucket } from "@/lib/gridfs";
+import { readBlob } from "@/lib/blob";
 import { Attachment } from "@/models/Attachment";
 import { requireSession } from "@/lib/api-auth";
 
@@ -22,14 +21,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Anexo não encontrado" }, { status: 404 });
   }
 
-  const bucket = await getBucket();
-  const downloadStream = bucket.openDownloadStream(attachment.fileId);
+  const result = await readBlob(attachment.blobUrl);
+  if (!result) {
+    return NextResponse.json({ error: "Arquivo não encontrado no armazenamento" }, { status: 404 });
+  }
 
-  // Converte o stream do Node (usado pelo driver do MongoDB) para o
-  // formato de stream que o Next.js espera numa resposta HTTP.
-  const webStream = Readable.toWeb(downloadStream) as ReadableStream;
-
-  return new NextResponse(webStream, {
+  return new NextResponse(result.stream, {
     headers: {
       "Content-Type": attachment.mimeType,
       "Content-Disposition": `inline; filename="${encodeURIComponent(attachment.filename)}"`,

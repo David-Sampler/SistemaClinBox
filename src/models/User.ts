@@ -17,7 +17,7 @@ export interface IUser {
   role: UserRole;
   cro?: string; // registro no Conselho Regional de Odontologia, se dentista
   phone?: string;
-  avatarFileId?: Types.ObjectId; // foto de perfil, guardada no GridFS (veja src/lib/gridfs.ts)
+  avatarBlobUrl?: string; // foto de perfil, guardada no Vercel Blob (veja src/lib/blob.ts)
   avatarMimeType?: string; // ex: "image/jpeg" — necessário pra servir a foto com o Content-Type certo
   active: boolean;
   createdAt: Date;
@@ -34,7 +34,7 @@ const UserSchema = new Schema<IUser>(
     role: { type: String, enum: ["admin", "dentist", "staff"], required: true, default: "staff" },
     cro: { type: String, trim: true },
     phone: { type: String, trim: true },
-    avatarFileId: { type: Schema.Types.ObjectId },
+    avatarBlobUrl: { type: String },
     avatarMimeType: { type: String },
     // "active: false" é usado para desativar um usuário sem apagar o histórico dele do banco
     active: { type: Boolean, default: true },

@@ -1,8 +1,8 @@
 // Rota para EXCLUIR um anexo: remove tanto o registro (metadados) quanto
-// o arquivo em si, guardado no GridFS.
+// o arquivo em si, guardado no Vercel Blob.
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { getBucket } from "@/lib/gridfs";
+import { deleteBlob } from "@/lib/blob";
 import { Attachment } from "@/models/Attachment";
 import { requireSession } from "@/lib/api-auth";
 
@@ -20,8 +20,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Anexo não encontrado" }, { status: 404 });
   }
 
-  const bucket = await getBucket();
-  await bucket.delete(attachment.fileId);
+  await deleteBlob(attachment.blobUrl);
   await Attachment.deleteOne({ _id: id });
 
   return NextResponse.json({ ok: true });

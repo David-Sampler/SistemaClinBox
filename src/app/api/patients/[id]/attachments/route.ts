@@ -2,7 +2,7 @@
 // arquivo (POST — radiografia, foto ou documento).
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { getBucket } from "@/lib/gridfs";
+import { uploadBlob } from "@/lib/blob";
 import { Attachment, AttachmentCategory } from "@/models/Attachment";
 import { requireSession } from "@/lib/api-auth";
 
@@ -57,24 +57,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     : "outro";
 
   await connectDB();
-  const bucket = await getBucket();
 
-  // Guarda o conteúdo do arquivo no GridFS (fora do documento do Mongoose,
-  // que só guarda os metadados) e espera a gravação terminar.
+  // Guarda o conteúdo do arquivo no Vercel Blob (fora do documento do
+  // Mongoose, que só guarda os metadados) — "attachments/ID_DO_PACIENTE/..."
+  // agrupa os arquivos de cada paciente numa "pasta" própria no Blob.
   const buffer = Buffer.from(await file.arrayBuffer());
-  const uploadStream = bucket.openUploadStream(file.name, { metadata: { contentType: file.type } });
-  // Erros de gravação chegam pelo evento "error" do stream, não por um
-  // callback do end() — versões recentes do driver do MongoDB não
-  // passam mais o erro como argumento do callback de conclusão.
-  await new Promise<void>((resolve, reject) => {
-    uploadStream.once("finish", () => resolve());
-    uploadStream.once("error", reject);
-    uploadStream.end(buffer);
-  });
+  const blob = await uploadBlob(`attachments/${id}/${file.name}`, buffer, file.type);
 
   const attachment = await Attachment.create({
     patient: id,
-    fileId: uploadStream.id,
+    blobUrl: blob.url,
     filename: file.name,
     mimeType: file.type,
     size: file.size,
