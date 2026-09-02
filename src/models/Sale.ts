@@ -6,7 +6,10 @@ import { Schema, model, models, Model, Types } from "mongoose";
 import type { PaymentMethod } from "./Payment";
 
 export type SaleItemType = "service" | "product";
-export type SaleStatus = "pago" | "pendente";
+// "cancelada" = venda estornada — fica no histórico (não some, pra manter
+// o registro contábil de que existiu e foi desfeita), mas some dos
+// totais de "Recebido"/"A receber" e, se tinha produto, devolve pro estoque.
+export type SaleStatus = "pago" | "pendente" | "cancelada";
 
 export interface ISaleItem {
   type: SaleItemType;
@@ -51,7 +54,7 @@ const SaleSchema = new Schema<ISale>(
       enum: ["dinheiro", "cartao_credito", "cartao_debito", "pix", "boleto", "convenio"],
       required: true,
     },
-    status: { type: String, enum: ["pago", "pendente"], default: "pago" },
+    status: { type: String, enum: ["pago", "pendente", "cancelada"], default: "pago" },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

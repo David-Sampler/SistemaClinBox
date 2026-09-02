@@ -7,7 +7,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Minus, Plus, Search, ShoppingCart, Trash2, Stethoscope, Package } from "lucide-react";
+import { Ban, Minus, Plus, Search, ShoppingCart, Trash2, Stethoscope, Package } from "lucide-react";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { colorFor } from "@/lib/palette";
 
@@ -64,7 +64,7 @@ type Sale = {
   items: { name: string; quantity: number; subtotal: number }[];
   total: number;
   method: string;
-  status: "pago" | "pendente";
+  status: "pago" | "pendente" | "cancelada";
   createdAt: string;
   patient?: { name: string };
 };
@@ -84,10 +84,12 @@ const methodLabels: Record<string, string> = {
 const saleStatusStyles: Record<Sale["status"], string> = {
   pago: "bg-success-soft text-success",
   pendente: "bg-warning-soft text-warning",
+  cancelada: "bg-neutral-soft text-ink-faint",
 };
 const saleStatusLabels: Record<Sale["status"], string> = {
   pago: "Pago",
   pendente: "Pendente",
+  cancelada: "Cancelada",
 };
 
 export function VendaView({ patients }: { patients: { id: string; name: string }[] }) {
@@ -147,6 +149,27 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
     const data = await res.json();
     setSales(data.sales ?? []);
     setSalesLoading(false);
+  }
+
+  // Cancela (estorna) uma venda já registrada — fica no histórico, mas
+  // sai dos totais de "Recebido"/"A receber", e se tinha produto, a
+  // rota devolve a quantidade pro estoque sozinha.
+  async function handleCancelSale(id: string) {
+    if (!confirm("Cancelar esta venda? O estoque de produtos vendidos nela é devolvido. Essa ação não pode ser desfeita.")) {
+      return;
+    }
+    const res = await fetch(`/api/sales/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "cancelada" }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(typeof data.error === "string" ? data.error : "Não foi possível cancelar a venda.");
+      return;
+    }
+    loadSales();
+    loadCatalog(); // reflete o estoque devolvido
   }
 
   function addToCart(item: CatalogItem) {
@@ -541,15 +564,23 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                     <th className="px-5 py-2 font-medium">Data</th>
                     <th className="px-5 py-2 font-medium">Status</th>
                     <th className="px-5 py-2 font-medium text-right">Total</th>
+                    <th className="px-5 py-2 font-medium text-right"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sales.map((s) => (
-                    <tr key={s._id} className="border-t border-line-soft hover:bg-surface-soft transition-colors">
+                  {sales.map((s) => {
+                    const cancelled = s.status === "cancelada";
+                    return (
+                    <tr
+                      key={s._id}
+                      className={`border-t border-line-soft hover:bg-surface-soft transition-colors ${cancelled ? "opacity-60" : ""}`}
+                    >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
                           <PatientAvatar name={s.patient?.name ?? "Venda avulsa"} size={28} />
-                          <span className="text-ink whitespace-nowrap">{s.patient?.name ?? "Venda avulsa"}</span>
+                          <span className={`text-ink whitespace-nowrap ${cancelled ? "line-through" : ""}`}>
+                            {s.patient?.name ?? "Venda avulsa"}
+                          </span>
                         </div>
                       </td>
                       <td className="px-5 py-3 text-ink-muted max-w-[240px] truncate">
@@ -569,8 +600,21 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                       <td className="px-5 py-3 text-right font-medium text-ink tabular whitespace-nowrap">
                         {currency(s.total)}
                       </td>
+                      <td className="px-5 py-3 text-right">
+                        {!cancelled && (
+                          <button
+                            onClick={() => handleCancelSale(s._id)}
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
+                            aria-label="Cancelar venda"
+                            title="Cancelar venda"
+                          >
+                            <Ban size={14} />
+                          </button>
+                        )}
+                      </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -594,9 +638,13 @@ function SalesStats({ sales, loading }: { sales: Sale[]; loading: boolean }) {
 
   const paid = sales.filter((s) => s.status === "pago");
   const pending = sales.filter((s) => s.status === "pendente");
+  // Vendas canceladas saem dos totais e da contagem — senão "ticket
+  // médio" ficava artificialmente mais baixo (dividindo pelo total de
+  // vendas incluindo as que foram estornadas e não somam nada).
+  const active = sales.filter((s) => s.status !== "cancelada");
   const totalPaid = paid.reduce((sum, s) => sum + s.total, 0);
   const totalPending = pending.reduce((sum, s) => sum + s.total, 0);
-  const ticket = sales.length > 0 ? (totalPaid + totalPending) / sales.length : 0;
+  const ticket = active.length > 0 ? (totalPaid + totalPending) / active.length : 0;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -607,7 +655,7 @@ function SalesStats({ sales, loading }: { sales: Sale[]; loading: boolean }) {
         detail={`${pending.length} venda${pending.length !== 1 ? "s" : ""}`}
         tone={pending.length > 0 ? "warning" : "default"}
       />
-      <StatCard label="Nº de vendas" value={String(sales.length)} detail="no período" />
+      <StatCard label="Nº de vendas" value={String(active.length)} detail="no período" />
       <StatCard label="Ticket médio" value={currency(ticket)} detail="por venda" />
     </div>
   );
