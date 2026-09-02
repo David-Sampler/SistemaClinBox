@@ -92,7 +92,7 @@ export default function NewPatientPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-ink">Novo paciente</h1>
         <p className="text-ink-muted">Preencha os dados cadastrais e o histórico médico</p>
@@ -102,8 +102,14 @@ export default function NewPatientPage() {
         <fieldset className="space-y-4">
           <legend className="font-semibold text-ink mb-1">Dados pessoais</legend>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Nome completo" name="name" required className="sm:col-span-2" error={fieldErrors.name} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <Field
+              label="Nome completo"
+              name="name"
+              required
+              className="sm:col-span-2 lg:col-span-3 xl:col-span-4"
+              error={fieldErrors.name}
+            />
             <Field
               label="Telefone"
               name="phone"
@@ -157,8 +163,8 @@ export default function NewPatientPage() {
 
         <fieldset className="space-y-4 border-t border-line-soft pt-4">
           <legend className="font-semibold text-ink mb-1">Endereço</legend>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Rua" name="street" className="sm:col-span-2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <Field label="Rua" name="street" className="sm:col-span-2 lg:col-span-3 xl:col-span-2" />
             <Field label="Número" name="number" />
             <Field label="Bairro" name="neighborhood" />
             <Field label="Cidade" name="city" />
@@ -172,7 +178,7 @@ export default function NewPatientPage() {
 
           <div>
             <p className="text-sm font-medium text-ink mb-2">Condições relevantes para o atendimento</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
               {CONDITION_ITEMS.map((c) => (
                 <label
                   key={c.key}
