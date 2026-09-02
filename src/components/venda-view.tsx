@@ -190,7 +190,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
           unitPrice: item.price ?? 0,
           quantity: 1,
           maxStock: item.stock,
-          needsPrice: item.price === undefined,
+          needsPrice: !item.price,
         },
       ];
     });
@@ -218,6 +218,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
   }
 
   const total = cart.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  const hasZeroPrice = cart.some((l) => l.unitPrice <= 0);
 
   // Categorias disponíveis dependem do tipo selecionado — evita mostrar
   // um filtro de categoria que não existe pra nenhum item visível.
@@ -245,9 +246,15 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
       return;
     }
 
-    const missingPrice = cart.filter((l) => l.needsPrice && l.unitPrice <= 0);
-    if (missingPrice.length > 0) {
-      setError(`Defina o valor de: ${missingPrice.map((l) => l.name).join(", ")}.`);
+    // Confere TODO item com valor zerado, não só os que vieram sem preço
+    // do catálogo (l.needsPrice) — um serviço com "defaultPrice: 0"
+    // salvo no cadastro (em vez de deixado em branco) passava batido
+    // aqui antes, porque tecnicamente já "tinha" um preço definido (zero).
+    // Vender por R$ 0,00 sempre exige confirmação explícita, nunca
+    // acontece sozinho.
+    const zeroPrice = cart.filter((l) => l.unitPrice <= 0);
+    if (zeroPrice.length > 0) {
+      setError(`Defina o valor de: ${zeroPrice.map((l) => l.name).join(", ")}.`);
       return;
     }
 
@@ -383,7 +390,10 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                           </p>
                         )}
                       </div>
-                      {item.price === undefined ? (
+                      {!item.price ? (
+                        // Cobre tanto "sem preço cadastrado" (undefined) quanto
+                        // "cadastrado como R$ 0,00" — os dois precisam do valor
+                        // digitado na hora da venda, nenhum dos dois é "grátis".
                         <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-warning-soft text-warning w-fit">
                           Definir na venda
                         </span>
@@ -421,7 +431,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                 <li key={l.key} className="flex items-center justify-between gap-2 text-sm">
                   <div className="min-w-0 flex-1">
                     <p className="text-ink font-medium truncate">{l.name}</p>
-                    {l.needsPrice ? (
+                    {l.needsPrice || l.unitPrice <= 0 ? (
                       <div className="flex items-center gap-1 mt-0.5">
                         <span className="text-ink-faint text-xs">R$</span>
                         <input
@@ -513,8 +523,12 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
 
           {error && <p className="text-sm text-danger">{error}</p>}
 
-          <button type="submit" disabled={submitting || cart.length === 0} className="w-full btn-primary">
-            {submitting ? "Finalizando..." : "Finalizar venda"}
+          <button
+            type="submit"
+            disabled={submitting || cart.length === 0 || hasZeroPrice}
+            className="w-full btn-primary"
+          >
+            {submitting ? "Finalizando..." : hasZeroPrice ? "Defina o valor pra finalizar" : "Finalizar venda"}
           </button>
         </form>
       </div>

@@ -46,6 +46,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  // Confere de novo aqui (não só na tela) que nenhum item está com valor
+  // zerado — a validação do formulário evita isso na maioria dos casos,
+  // mas a API precisa recusar por conta própria também, sem depender só
+  // do que o navegador mandou.
+  const zeroPrice = parsed.data.items.filter((i) => i.unitPrice <= 0);
+  if (zeroPrice.length > 0) {
+    return NextResponse.json(
+      { error: `Defina o valor de: ${zeroPrice.map((i) => i.name).join(", ")}.` },
+      { status: 400 }
+    );
+  }
+
   await connectDB();
 
   // Antes de criar a venda, confere se tem estoque suficiente de cada
