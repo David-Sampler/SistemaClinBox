@@ -6,7 +6,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, X } from "lucide-react";
 import { addDays, format, isSameDay, isToday, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { StatusBadge } from "@/components/status-badge";
@@ -96,6 +96,17 @@ export function AgendaView({
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
+  // Controla o formulário de "reagendar" dentro do painel lateral —
+  // separado do modal de "novo agendamento" (mesmos campos, contexto
+  // diferente). Fecha sozinho sempre que a consulta selecionada muda,
+  // pra nunca abrir já em modo de edição de uma consulta diferente.
+  const [editingSchedule, setEditingSchedule] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEditingSchedule(false);
+    setEditError(null);
+  }, [selected?._id]);
 
   const weekStart = startOfWeek(parseISO(date), { weekStartsOn: 1 });
   const weekDays = useMemo(
@@ -114,6 +125,10 @@ export function AgendaView({
     return () => clearInterval(interval);
   }, []);
 
+  // Devolve a lista carregada (não só guarda no estado) pra quem precisa
+  // conferir o resultado logo em seguida — ex: depois de editar uma
+  // consulta, pra atualizar o painel lateral com os dados já populados
+  // (nome do dentista/paciente), que a resposta do PUT sozinha não traz.
   async function loadAppointments() {
     setLoading(true);
     const rangeStart = view === "week" ? weekDays[0] : parseISO(date);
@@ -125,8 +140,10 @@ export function AgendaView({
 
     const res = await fetch(`/api/appointments?${params.toString()}`);
     const data = await res.json();
-    setAppointments(data.appointments ?? []);
+    const list: Appointment[] = data.appointments ?? [];
+    setAppointments(list);
     setLoading(false);
+    return list;
   }
 
   function openNewAppointment(opts?: { dayISO?: string; time?: string; dentistId?: string }) {
@@ -194,6 +211,49 @@ export function AgendaView({
     });
     setSelected((s) => (s && s._id === id ? { ...s, status } : s));
     loadAppointments();
+  }
+
+  // Reagenda uma consulta já existente (dentista/data/horário/duração/
+  // procedimento) — a API já aceitava isso (PUT parcial), só faltava
+  // esse formulário no painel lateral pra usar.
+  async function handleEditSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selected) return;
+    setEditError(null);
+
+    const form = new FormData(e.currentTarget);
+    const day = form.get("date") as string;
+    const time = form.get("time") as string;
+    const durationMin = Number(form.get("duration") || 30);
+    const start = new Date(`${day}T${time}:00`);
+    const end = new Date(start.getTime() + durationMin * 60000);
+
+    const payload = {
+      dentist: form.get("dentist"),
+      start: start.toISOString(),
+      end: end.toISOString(),
+      procedure: form.get("procedure") || undefined,
+    };
+
+    const res = await fetch(`/api/appointments/${selected._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setEditError(data.error || "Não foi possível salvar as alterações.");
+      return;
+    }
+
+    setEditingSchedule(false);
+    // Recarrega a lista (com dentista/paciente já populados, que a
+    // resposta do PUT sozinha não traz) e sincroniza o painel lateral
+    // com os dados atualizados dessa mesma consulta.
+    const list = await loadAppointments();
+    const updated = list.find((a) => a._id === selected._id);
+    if (updated) setSelected(updated);
   }
 
   function goPrev() {
@@ -473,58 +533,135 @@ export function AgendaView({
             <WhatsAppLink phone={selected.patient?.phone} size={17} />
           </div>
 
-          <dl className="space-y-3 text-sm mb-6">
-            {selected.patient?.phone && (
-              <div className="flex justify-between">
-                <dt className="text-ink-muted">Telefone</dt>
-                <dd className="text-ink font-medium tabular">{selected.patient.phone}</dd>
+          {editingSchedule ? (
+            <form onSubmit={handleEditSubmit} className="space-y-3 mb-6">
+              <Field label="Dentista">
+                <select name="dentist" required defaultValue={selected.dentist?._id ?? ""} className="input">
+                  <option value="">Selecione...</option>
+                  {dentists.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Data">
+                  <input
+                    name="date"
+                    type="date"
+                    required
+                    defaultValue={format(new Date(selected.start), "yyyy-MM-dd")}
+                    className="input"
+                  />
+                </Field>
+                <Field label="Horário">
+                  <input
+                    name="time"
+                    type="time"
+                    required
+                    defaultValue={format(new Date(selected.start), "HH:mm")}
+                    className="input"
+                  />
+                </Field>
               </div>
-            )}
-            <div className="flex justify-between">
-              <dt className="text-ink-muted">Dentista</dt>
-              <dd className="text-ink font-medium">{selected.dentist?.name ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-ink-muted">Horário</dt>
-              <dd className="text-ink font-medium tabular">
-                {new Date(selected.start).toLocaleDateString("pt-BR")}{" "}
-                {new Date(selected.start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                {" – "}
-                {new Date(selected.end).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-              </dd>
-            </div>
-            {selected.procedure && (
-              <div className="flex justify-between">
-                <dt className="text-ink-muted">Procedimento</dt>
-                <dd className="text-ink font-medium">{selected.procedure}</dd>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Duração (min)">
+                  <input
+                    name="duration"
+                    type="number"
+                    min={10}
+                    step={5}
+                    defaultValue={Math.round(
+                      (new Date(selected.end).getTime() - new Date(selected.start).getTime()) / 60000
+                    )}
+                    className="input"
+                  />
+                </Field>
+                <Field label="Procedimento">
+                  <input name="procedure" defaultValue={selected.procedure} className="input" />
+                </Field>
               </div>
-            )}
-            <div className="flex justify-between items-center">
-              <dt className="text-ink-muted">Status</dt>
-              <dd>
-                <StatusBadge status={selected.status} />
-              </dd>
-            </div>
-          </dl>
 
-          <p className="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">
-            Alterar status
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {STATUS_FLOW.map((s) => (
-              <button
-                key={s.value}
-                onClick={() => updateStatus(selected._id, s.value)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                  selected.status === s.value
-                    ? "bg-blue text-white border-blue"
-                    : "bg-surface text-ink-muted border-line hover:border-blue/40"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+              {editError && <p className="text-sm text-danger">{editError}</p>}
+
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setEditingSchedule(false)} className="btn-secondary flex-1">
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-primary flex-1">
+                  Salvar
+                </button>
+              </div>
+            </form>
+          ) : (
+            <dl className="space-y-3 text-sm mb-6">
+              {selected.patient?.phone && (
+                <div className="flex justify-between">
+                  <dt className="text-ink-muted">Telefone</dt>
+                  <dd className="text-ink font-medium tabular">{selected.patient.phone}</dd>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <dt className="text-ink-muted">Dentista</dt>
+                <dd className="text-ink font-medium">{selected.dentist?.name ?? "—"}</dd>
+              </div>
+              <div className="flex justify-between items-start">
+                <dt className="text-ink-muted pt-0.5">Horário</dt>
+                <dd className="text-ink font-medium tabular text-right">
+                  <span className="inline-flex items-center gap-2">
+                    {new Date(selected.start).toLocaleDateString("pt-BR")}{" "}
+                    {new Date(selected.start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {" – "}
+                    {new Date(selected.end).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    <button
+                      onClick={() => setEditingSchedule(true)}
+                      className="text-ink-faint hover:text-blue transition-colors"
+                      aria-label="Reagendar consulta"
+                      title="Mudar dia/horário/dentista"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                  </span>
+                </dd>
+              </div>
+              {selected.procedure && (
+                <div className="flex justify-between">
+                  <dt className="text-ink-muted">Procedimento</dt>
+                  <dd className="text-ink font-medium">{selected.procedure}</dd>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <dt className="text-ink-muted">Status</dt>
+                <dd>
+                  <StatusBadge status={selected.status} />
+                </dd>
+              </div>
+            </dl>
+          )}
+
+          {!editingSchedule && (
+            <>
+              <p className="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">
+                Alterar status
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {STATUS_FLOW.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => updateStatus(selected._id, s.value)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      selected.status === s.value
+                        ? "bg-blue text-white border-blue"
+                        : "bg-surface text-ink-muted border-line hover:border-blue/40"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </SidePanel>
       )}
     </div>
