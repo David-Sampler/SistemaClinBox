@@ -4,8 +4,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { KeyRound } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { AvatarCropModal } from "@/components/avatar-crop-modal";
+import { ChangePasswordModal } from "@/components/change-password-modal";
 
 const roleLabels: Record<string, string> = {
   admin: "Administrador",
@@ -19,6 +21,7 @@ export function UserMenu({ userId, userName, userRole }: { userId: string; userN
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -60,6 +63,16 @@ export function UserMenu({ userId, userName, userRole }: { userId: string; userN
 
       <button
         type="button"
+        onClick={() => setChangingPassword(true)}
+        className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"
+        aria-label="Trocar minha senha"
+        title="Trocar minha senha"
+      >
+        <KeyRound size={16} />
+      </button>
+
+      <button
+        type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
         className="relative group shrink-0 rounded-full"
@@ -86,6 +99,8 @@ export function UserMenu({ userId, userName, userRole }: { userId: string; userN
       {pendingFile && (
         <AvatarCropModal file={pendingFile} onCancel={() => setPendingFile(null)} onConfirm={handleCropConfirm} />
       )}
+
+      {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} />}
     </div>
   );
 }

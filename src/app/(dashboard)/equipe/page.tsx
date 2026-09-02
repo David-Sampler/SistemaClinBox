@@ -8,11 +8,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Pencil, Plus, UserX } from "lucide-react";
+import { KeyRound, Pencil, Plus, UserX } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
 import { Modal } from "@/components/modal";
 import { PermissionsPanel } from "@/components/permissions-panel";
+import { ResetPasswordModal } from "@/components/reset-password-modal";
 
 type Member = {
   _id: string;
@@ -35,6 +36,7 @@ export default function EquipePage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
+  const [resetting, setResetting] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const isAdmin = session?.user?.role === "admin";
@@ -185,6 +187,14 @@ export default function EquipePage() {
                     >
                       <Pencil size={14} />
                     </button>
+                    <button
+                      onClick={() => setResetting(m)}
+                      className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-surface hover:text-blue transition-colors"
+                      aria-label="Redefinir senha"
+                      title="Redefinir senha"
+                    >
+                      <KeyRound size={14} />
+                    </button>
                     {m._id !== session?.user?.id && (
                       <button
                         onClick={() => handleDeactivate(m._id)}
@@ -212,6 +222,15 @@ export default function EquipePage() {
             setEditing(null);
             loadMembers();
           }}
+        />
+      )}
+
+      {resetting && (
+        <ResetPasswordModal
+          memberId={resetting._id}
+          memberName={resetting.name}
+          onClose={() => setResetting(null)}
+          onSaved={() => setResetting(null)}
         />
       )}
     </div>

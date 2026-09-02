@@ -3,6 +3,7 @@
 // esconde o usuário, nunca apaga: preserva o histórico do que ele
 // cadastrou/atendeu). As duas ações são só para administradores.
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
 import { userUpdateSchema } from "@/lib/validators";
@@ -39,11 +40,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Você não pode remover seu próprio papel de administrador" }, { status: 400 });
   }
 
-  const user = await User.findByIdAndUpdate(
-    id,
-    { ...parsed.data, email: parsed.data.email?.toLowerCase() },
-    { new: true }
-  ).select("-passwordHash");
+  // "password" não é um campo do modelo (que guarda "passwordHash") —
+  // troca aqui por um hash de verdade antes de salvar, e nunca deixa a
+  // senha em texto puro chegar perto do banco.
+  const { password, ...rest } = parsed.data;
+  const update: Record<string, unknown> = { ...rest, email: parsed.data.email?.toLowerCase() };
+  if (password) {
+    update.passwordHash = await bcrypt.hash(password, 10);
+  }
+
+  const user = await User.findByIdAndUpdate(id, update, { new: true }).select("-passwordHash");
 
   if (!user) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
   return NextResponse.json({ user });

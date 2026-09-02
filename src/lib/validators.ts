@@ -186,14 +186,16 @@ export const userSchema = z.object({
 });
 
 // Edição de um usuário já existente: tudo opcional (o formulário manda só
-// o que mudou), e sem senha aqui — trocar senha é um fluxo separado,
-// não faz parte de editar cadastro.
+// o que mudou). "password" fica de fora do formulário normal de editar
+// cadastro — só é usado pela tela separada de "Redefinir senha" (ver
+// src/components/reset-password-modal.tsx), mas mora no mesmo endpoint.
 export const userUpdateSchema = z.object({
   name: z.string().min(2, "Nome muito curto").optional(),
   email: z.string().email("E-mail inválido").optional(),
   role: z.enum(["admin", "dentist", "staff"]).optional(),
   cro: z.string().optional(),
   phone: z.string().optional(),
+  password: z.string().min(6, "Senha deve ter ao menos 6 caracteres").optional(),
   active: z.boolean().optional(),
 });
 
