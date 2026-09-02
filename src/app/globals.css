@@ -576,7 +576,7 @@ body {
   background:
     radial-gradient(ellipse 900px 600px at 15% 0%, #1f6fb0 0%, transparent 60%),
     linear-gradient(160deg, #00203f 0%, #001830 60%, #001120 100%);
-  animation: splash-out 1.7s ease-in-out forwards;
+  animation: splash-out 2.8s ease-in-out forwards;
 }
 .splash-screen-logo {
   display: flex;
@@ -588,8 +588,11 @@ body {
   from { opacity: 0; transform: translateY(6px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+/* Segura no ar até 65% da duração (~1.8s) antes de começar a sumir —
+   pediram mais tempo porque 1.7s inteiros (com o fade já embutido)
+   passava rápido demais pra dar a sensação de "carregando". */
 @keyframes splash-out {
-  0%, 55% { opacity: 1; }
+  0%, 65% { opacity: 1; }
   100% { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
