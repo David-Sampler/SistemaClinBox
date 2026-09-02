@@ -8,12 +8,19 @@ import { requireSession, requireRole } from "@/lib/api-auth";
 // Rota de API da EQUIPE: listar usuários do sistema (GET, qualquer pessoa
 // logada pode ver quem faz parte da equipe) e cadastrar um novo usuário
 // (POST, só administradores podem fazer isso).
-export async function GET() {
-  const { error } = await requireSession();
+export async function GET(req: NextRequest) {
+  const { session, error } = await requireSession();
   if (error) return error;
 
+  // "?includeInactive=true" também traz quem foi desativado — só o
+  // administrador pode pedir isso, é o que alimenta a lista de "usuários
+  // inativos" na tela de Equipe, usada pra reativar alguém.
+  const includeInactive =
+    req.nextUrl.searchParams.get("includeInactive") === "true" && session!.user.role === "admin";
+
   await connectDB();
-  const users = await User.find({ active: true }).select("-passwordHash").sort({ name: 1 }).lean();
+  const filter = includeInactive ? {} : { active: true };
+  const users = await User.find(filter).select("-passwordHash").sort({ name: 1 }).lean();
   return NextResponse.json({ users });
 }
 

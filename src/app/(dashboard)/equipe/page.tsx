@@ -8,7 +8,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { KeyRound, Pencil, Plus, UserX } from "lucide-react";
+import { KeyRound, Pencil, Plus, UserCheck, UserX } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
 import { Modal } from "@/components/modal";
@@ -22,6 +22,7 @@ type Member = {
   role: "admin" | "dentist" | "staff";
   cro?: string;
   phone?: string;
+  active: boolean;
 };
 
 const roleLabels: Record<string, string> = {
@@ -38,20 +39,27 @@ export default function EquipePage() {
   const [editing, setEditing] = useState<Member | null>(null);
   const [resetting, setResetting] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Por padrão só traz quem está ativo; ligar isso também busca quem foi
+  // desativado, pra mostrar a seção "Usuários inativos" com opção de reativar.
+  const [showInactive, setShowInactive] = useState(false);
 
   const isAdmin = session?.user?.role === "admin";
 
   useEffect(() => {
     loadMembers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showInactive]);
 
   async function loadMembers() {
     setLoading(true);
-    const res = await fetch("/api/users");
+    const res = await fetch(showInactive ? "/api/users?includeInactive=true" : "/api/users");
     const data = await res.json();
     setMembers(data.users ?? []);
     setLoading(false);
   }
+
+  const activeMembers = members.filter((m) => m.active);
+  const inactiveMembers = members.filter((m) => !m.active);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -85,8 +93,20 @@ export default function EquipePage() {
 
   async function handleDeactivate(id: string) {
     if (!confirm("Desativar este usuário? Ele perde o acesso ao sistema, mas o histórico dele é mantido.")) return;
-    setMembers((prev) => prev.filter((m) => m._id !== id));
     await fetch(`/api/users/${id}`, { method: "DELETE" });
+    loadMembers();
+  }
+
+  // Reverte a desativação: usa o mesmo PUT de editar usuário, só que
+  // mandando "active: true" — o campo já existia no schema de edição,
+  // faltava só este botão pra usar.
+  async function handleReactivate(id: string) {
+    await fetch(`/api/users/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: true }),
+    });
+    loadMembers();
   }
 
   return (
@@ -97,12 +117,20 @@ export default function EquipePage() {
           <p className="text-ink-muted">Pessoas com acesso ao sistema (dentistas, recepção e administração)</p>
         </div>
         {isAdmin && (
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="btn-primary"
-          >
-            <Plus size={16} /> Novo usuário
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowInactive((v) => !v)}
+              className="btn-secondary"
+            >
+              {showInactive ? "Ocultar inativos" : "Ver inativos"}
+            </button>
+            <button
+              onClick={() => setShowForm((v) => !v)}
+              className="btn-primary"
+            >
+              <Plus size={16} /> Novo usuário
+            </button>
+          </div>
         )}
       </div>
 
@@ -162,7 +190,7 @@ export default function EquipePage() {
           </div>
         ) : (
           <ul className="divide-y divide-line-soft">
-            {members.map((m, i) => (
+            {activeMembers.map((m, i) => (
               <li
                 key={m._id}
                 className="fade-up px-5 py-3 flex items-center gap-3 text-sm hover:bg-surface-soft transition-colors"
@@ -211,6 +239,47 @@ export default function EquipePage() {
           </ul>
         )}
       </div>
+
+      {isAdmin && showInactive && (
+        <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
+          <div className="px-5 py-3 border-b border-line-soft">
+            <p className="text-sm font-medium text-ink">Usuários inativos</p>
+            <p className="text-xs text-ink-muted">
+              Perderam o acesso ao sistema, mas o histórico deles foi mantido. Reative quando precisar.
+            </p>
+          </div>
+          {loading ? (
+            <div className="p-4 space-y-3">
+              <div className="skeleton h-10" />
+            </div>
+          ) : inactiveMembers.length === 0 ? (
+            <p className="px-5 py-4 text-sm text-ink-faint">Nenhum usuário inativo no momento.</p>
+          ) : (
+            <ul className="divide-y divide-line-soft">
+              {inactiveMembers.map((m) => (
+                <li key={m._id} className="px-5 py-3 flex items-center gap-3 text-sm opacity-60">
+                  <UserAvatar userId={m._id} name={m.name} size={36} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink truncate">{m.name}</p>
+                    <p className="text-ink-muted truncate">{m.email}</p>
+                  </div>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-surface-soft text-ink-faint shrink-0">
+                    {roleLabels[m.role] ?? m.role}
+                  </span>
+                  <button
+                    onClick={() => handleReactivate(m._id)}
+                    className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-success-soft hover:text-success transition-colors shrink-0"
+                    aria-label="Reativar usuário"
+                    title="Reativar usuário"
+                  >
+                    <UserCheck size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {isAdmin && <PermissionsPanel />}
 
