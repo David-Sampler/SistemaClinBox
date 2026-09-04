@@ -11,6 +11,13 @@ export type AppointmentStatus =
   | "cancelado"
   | "falta";
 
+// Tipo da consulta — diferente do status (que muda ao longo do dia) e do
+// procedimento (texto livre do que foi/será feito): categoriza de forma
+// fixa PARA QUE tipo de atendimento é a consulta, usado pra colorir o
+// bloco na agenda de relance (ex: distinguir uma urgência de uma
+// avaliação de rotina sem precisar abrir o painel de detalhe).
+export type AppointmentType = "avaliacao" | "retorno" | "urgencia" | "procedimento" | "manutencao";
+
 export interface IAppointment {
   _id: Types.ObjectId;
   patient: Types.ObjectId;
@@ -18,6 +25,7 @@ export interface IAppointment {
   start: Date;
   end: Date;
   status: AppointmentStatus;
+  type?: AppointmentType;
   procedure?: string;
   notes?: string;
   createdBy: Types.ObjectId;
@@ -36,6 +44,10 @@ const AppointmentSchema = new Schema<IAppointment>(
       enum: ["agendado", "confirmado", "em_atendimento", "concluido", "cancelado", "falta"],
       default: "agendado",
     },
+    // Sem "required": consultas criadas antes desse campo existir ficam
+    // sem tipo (a agenda simplesmente não mostra a bolinha colorida pra
+    // elas) — não precisa de migração de dados antigos.
+    type: { type: String, enum: ["avaliacao", "retorno", "urgencia", "procedimento", "manutencao"] },
     procedure: { type: String, trim: true },
     notes: { type: String, trim: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },

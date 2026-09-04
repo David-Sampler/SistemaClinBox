@@ -75,6 +75,7 @@ export const appointmentSchema = z.object({
   status: z
     .enum(["agendado", "confirmado", "em_atendimento", "concluido", "cancelado", "falta"])
     .optional(),
+  type: z.enum(["avaliacao", "retorno", "urgencia", "procedimento", "manutencao"]).optional(),
   procedure: z.string().optional(),
   notes: z.string().optional(),
 });

@@ -20,6 +20,7 @@ type Appointment = {
   start: string;
   end: string;
   status: string;
+  type?: string;
   procedure?: string;
   patient?: { _id: string; name: string; phone?: string };
   dentist?: { _id: string; name: string };
@@ -42,6 +43,26 @@ const STATUS_FLOW: { value: string; label: string }[] = [
   { value: "falta", label: "Faltou" },
   { value: "cancelado", label: "Cancelado" },
 ];
+
+// Tipo de consulta — categoriza PARA QUE é a consulta (diferente do
+// status, que muda ao longo do dia). Cada um tem uma cor própria, usada
+// como uma bolinha no bloco da agenda pra identificar de relance sem
+// precisar abrir o painel de detalhe.
+const TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "avaliacao", label: "Avaliação" },
+  { value: "retorno", label: "Retorno" },
+  { value: "urgencia", label: "Urgência" },
+  { value: "procedimento", label: "Procedimento" },
+  { value: "manutencao", label: "Manutenção" },
+];
+const TYPE_LABELS: Record<string, string> = Object.fromEntries(TYPE_OPTIONS.map((t) => [t.value, t.label]));
+const TYPE_DOT_COLORS: Record<string, string> = {
+  avaliacao: "bg-blue",
+  retorno: "bg-tooth-mauve",
+  urgencia: "bg-danger",
+  procedimento: "bg-success",
+  manutencao: "bg-brass",
+};
 
 function todayISO() {
   return format(new Date(), "yyyy-MM-dd");
@@ -183,6 +204,7 @@ export function AgendaView({
       dentist: form.get("dentist"),
       start: start.toISOString(),
       end: end.toISOString(),
+      type: form.get("type") || undefined,
       procedure: form.get("procedure") || undefined,
     };
 
@@ -242,6 +264,7 @@ export function AgendaView({
       dentist: form.get("dentist"),
       start: start.toISOString(),
       end: end.toISOString(),
+      type: form.get("type") || undefined,
       procedure: form.get("procedure") || undefined,
     };
 
@@ -514,13 +537,27 @@ export function AgendaView({
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              <Field label="Tipo de consulta">
+                <select name="type" required defaultValue="avaliacao" className="input">
+                  {TYPE_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
               <Field label="Duração (min)">
                 <input name="duration" type="number" min={10} step={5} defaultValue={30} className="input" />
               </Field>
-              <Field label="Procedimento">
-                <input name="procedure" className="input" placeholder="ex: Avaliação, Limpeza..." />
-              </Field>
             </div>
+            <Field label="Procedimento">
+              <textarea
+                name="procedure"
+                rows={3}
+                className="input"
+                placeholder="Detalhe o que será feito nessa consulta..."
+              />
+            </Field>
 
             {error && <p className="text-sm text-danger">{error}</p>}
 
@@ -576,6 +613,15 @@ export function AgendaView({
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
+                <Field label="Tipo de consulta">
+                  <select name="type" required defaultValue={selected.type || "avaliacao"} className="input">
+                    {TYPE_OPTIONS.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
                 <Field label="Duração (min)">
                   <input
                     name="duration"
@@ -588,10 +634,10 @@ export function AgendaView({
                     className="input"
                   />
                 </Field>
-                <Field label="Procedimento">
-                  <input name="procedure" defaultValue={selected.procedure} className="input" />
-                </Field>
               </div>
+              <Field label="Procedimento">
+                <textarea name="procedure" rows={3} defaultValue={selected.procedure} className="input" />
+              </Field>
 
               {editError && <p className="text-sm text-danger">{editError}</p>}
 
@@ -616,6 +662,15 @@ export function AgendaView({
                 <dt className="text-ink-muted">Dentista</dt>
                 <dd className="text-ink font-medium">{selected.dentist?.name ?? "—"}</dd>
               </div>
+              {selected.type && (
+                <div className="flex justify-between items-center">
+                  <dt className="text-ink-muted">Tipo</dt>
+                  <dd className="text-ink font-medium inline-flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${TYPE_DOT_COLORS[selected.type] ?? "bg-ink-faint"}`} />
+                    {TYPE_LABELS[selected.type] ?? selected.type}
+                  </dd>
+                </div>
+              )}
               <div className="flex justify-between items-start">
                 <dt className="text-ink-muted pt-0.5">Horário</dt>
                 <dd className="text-ink font-medium tabular text-right">
@@ -636,9 +691,13 @@ export function AgendaView({
                 </dd>
               </div>
               {selected.procedure && (
-                <div className="flex justify-between">
-                  <dt className="text-ink-muted">Procedimento</dt>
-                  <dd className="text-ink font-medium">{selected.procedure}</dd>
+                // Texto livre pode ter várias linhas agora — empilha o
+                // rótulo em cima do valor em vez de lado a lado (o layout
+                // "flex justify-between" das outras linhas só funciona
+                // bem pra valores curtos de uma linha só).
+                <div>
+                  <dt className="text-ink-muted mb-1">Procedimento</dt>
+                  <dd className="text-ink font-medium whitespace-pre-wrap">{selected.procedure}</dd>
                 </div>
               )}
               <div className="flex justify-between items-center">
@@ -755,11 +814,17 @@ function AppointmentBlock({
         onClick();
       }}
       style={style}
+      title={appt.type ? TYPE_LABELS[appt.type] ?? appt.type : undefined}
       className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1 rounded-md border-l-[3px] text-left overflow-hidden hover:brightness-95 hover:shadow-md hover:scale-[1.02] transition-[filter,box-shadow,transform] ${
         palette[appt.status] ?? palette.agendado
       }`}
     >
-      <p className="text-[11px] font-semibold leading-tight truncate">
+      <p className="text-[11px] font-semibold leading-tight truncate inline-flex items-center gap-1">
+        {/* Bolinha colorida do tipo de consulta — dá pra reconhecer o
+            tipo (avaliação, urgência...) sem abrir o painel de detalhe.
+            Some sozinha se a consulta não tiver tipo definido (ex:
+            consultas antigas, de antes desse campo existir). */}
+        {appt.type && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_DOT_COLORS[appt.type] ?? "bg-ink-faint"}`} />}
         {start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         {!compact && ` · ${appt.patient?.name ?? "Paciente"}`}
       </p>
