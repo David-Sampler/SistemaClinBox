@@ -350,6 +350,13 @@ export function AgendaView({
   );
   const viewingToday = isToday(parseISO(date));
   const nowTop = minutesToTop(now);
+  // Se hoje está visível na tela (seja a visão Dia nele, seja a semana
+  // que contém hoje), mostra a etiqueta de horário atual na coluna da
+  // esquerda — só entre o horário de início/fim exibido na grade.
+  const todayVisibleInRange =
+    (view === "day" ? viewingToday : weekDays.some((d) => isToday(d))) &&
+    now.getHours() >= START_HOUR &&
+    now.getHours() < END_HOUR;
 
   const periodLabel =
     view === "week"
@@ -435,6 +442,18 @@ export function AgendaView({
         </div>
       </div>
 
+      {/* Legenda dos tipos de consulta — mesma cor usada na borda dos
+          blocos, pra quem olha a agenda entender o código de cores sem
+          precisar abrir uma consulta pra descobrir o que cada uma significa. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1">
+        {TYPE_OPTIONS.map((t) => (
+          <span key={t.value} className="inline-flex items-center gap-1.5 text-xs text-ink-muted">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${TYPE_DOT_COLORS[t.value]}`} />
+            {t.label}
+          </span>
+        ))}
+      </div>
+
       {/* Grade de horários */}
       <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] overflow-hidden">
         {dentists.length === 0 ? (
@@ -463,6 +482,7 @@ export function AgendaView({
                     {String(h).padStart(2, "0")}:00
                   </span>
                 ))}
+                {todayVisibleInRange && <NowTimeLabel top={nowTop} now={now} />}
               </div>
             </div>
 
@@ -812,12 +832,29 @@ function HourLines({ hours }: { hours: number[] }) {
 }
 
 // Linha vermelha marcando o horário atual, só aparece no dia de hoje.
+// A etiqueta com a hora exata fica só na coluna de horários (ver
+// NowTimeLabel) — repetir "17:04" em cada coluna de dentista/dia
+// deixava a tela poluída quando tinha vários lado a lado.
 function NowLine({ top }: { top: number }) {
   return (
     <div className="absolute left-0 right-0 flex items-center gap-1 z-20 pointer-events-none" style={{ top }}>
       <span className="w-1.5 h-1.5 rounded-full bg-danger -ml-0.5" />
       <span className="flex-1 border-t border-danger" />
     </div>
+  );
+}
+
+// Etiqueta com a hora atual, mostrada uma vez só na coluna de horários
+// (sticky à esquerda) — do jeito que Google Agenda e afins fazem, em
+// vez de uma linha vermelha sem contexto nenhum de que horas são agora.
+function NowTimeLabel({ top, now }: { top: number; now: Date }) {
+  return (
+    <span
+      className="absolute right-1 -translate-y-1/2 text-[10px] font-semibold text-white bg-danger rounded px-1 py-px tabular z-20 pointer-events-none"
+      style={{ top }}
+    >
+      {now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+    </span>
   );
 }
 
@@ -878,7 +915,7 @@ function AppointmentBlock({
       }}
       style={style}
       title={appt.type ? TYPE_LABELS[appt.type] ?? appt.type : undefined}
-      className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1 rounded-md border-l-4 text-left overflow-hidden hover:brightness-95 hover:shadow-md hover:scale-[1.02] transition-[filter,box-shadow,transform] ${borderColor} ${statusStyle.bg} ${statusStyle.text}`}
+      className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1 rounded-md border-l-4 text-left overflow-hidden shadow-sm shadow-ink/[0.04] hover:brightness-95 hover:shadow-md hover:scale-[1.02] transition-[filter,box-shadow,transform] ${borderColor} ${statusStyle.bg} ${statusStyle.text}`}
     >
       <p className="text-[11px] font-semibold leading-tight truncate inline-flex items-center gap-1">
         {/* Bolinha colorida do tipo de consulta — reforça a cor da borda,
