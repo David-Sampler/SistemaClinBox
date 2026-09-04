@@ -63,6 +63,16 @@ const TYPE_DOT_COLORS: Record<string, string> = {
   procedimento: "bg-success",
   manutencao: "bg-brass",
 };
+// Cor da borda esquerda do bloco na agenda quando a consulta tem um tipo
+// definido — mais visível que só a bolinha, dá pra notar de relance sem
+// precisar clicar. Mesma paleta de TYPE_DOT_COLORS, só que como borda.
+const TYPE_BORDER_COLORS: Record<string, string> = {
+  avaliacao: "border-blue",
+  retorno: "border-tooth-mauve",
+  urgencia: "border-danger",
+  procedimento: "border-success",
+  manutencao: "border-brass",
+};
 
 function todayISO() {
   return format(new Date(), "yyyy-MM-dd");
@@ -783,14 +793,21 @@ function AppointmentBlock({
   const top = minutesToTop(start);
   const height = Math.max(((end.getTime() - start.getTime()) / 60000 / 60) * HOUR_PX, 26);
 
-  const palette: Record<string, string> = {
-    agendado: "bg-neutral-soft border-ink-faint/30 text-ink-muted",
-    confirmado: "bg-blue-soft border-blue/40 text-blue-strong",
-    em_atendimento: "bg-brass-soft border-brass/40 text-brass",
-    concluido: "bg-success-soft border-success/40 text-success",
-    cancelado: "bg-danger-soft border-danger/30 text-ink-faint line-through",
-    falta: "bg-danger-soft border-danger/40 text-danger",
+  // Cor de fundo/texto vem do STATUS (como sempre foi); a cor da BORDA
+  // esquerda vem do TIPO quando definido (mais chamativo que a bolinha
+  // sozinha), caindo de volta pra cor do status quando não tem tipo —
+  // separado em bg/border/text pra evitar que duas classes de Tailwind
+  // disputando a mesma propriedade (border-color) entrem em conflito.
+  const STATUS_STYLES: Record<string, { bg: string; border: string; text: string }> = {
+    agendado: { bg: "bg-neutral-soft", border: "border-ink-faint/30", text: "text-ink-muted" },
+    confirmado: { bg: "bg-blue-soft", border: "border-blue/40", text: "text-blue-strong" },
+    em_atendimento: { bg: "bg-brass-soft", border: "border-brass/40", text: "text-brass" },
+    concluido: { bg: "bg-success-soft", border: "border-success/40", text: "text-success" },
+    cancelado: { bg: "bg-danger-soft", border: "border-danger/30", text: "text-ink-faint line-through" },
+    falta: { bg: "bg-danger-soft", border: "border-danger/40", text: "text-danger" },
   };
+  const statusStyle = STATUS_STYLES[appt.status] ?? STATUS_STYLES.agendado;
+  const borderColor = (appt.type && TYPE_BORDER_COLORS[appt.type]) || statusStyle.border;
 
   // Quando há mais de uma consulta no mesmo horário (visão semanal com
   // vários dentistas), cada uma ocupa uma "raia" lado a lado.
@@ -815,15 +832,14 @@ function AppointmentBlock({
       }}
       style={style}
       title={appt.type ? TYPE_LABELS[appt.type] ?? appt.type : undefined}
-      className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1 rounded-md border-l-[3px] text-left overflow-hidden hover:brightness-95 hover:shadow-md hover:scale-[1.02] transition-[filter,box-shadow,transform] ${
-        palette[appt.status] ?? palette.agendado
-      }`}
+      className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1 rounded-md border-l-4 text-left overflow-hidden hover:brightness-95 hover:shadow-md hover:scale-[1.02] transition-[filter,box-shadow,transform] ${borderColor} ${statusStyle.bg} ${statusStyle.text}`}
     >
       <p className="text-[11px] font-semibold leading-tight truncate inline-flex items-center gap-1">
-        {/* Bolinha colorida do tipo de consulta — dá pra reconhecer o
-            tipo (avaliação, urgência...) sem abrir o painel de detalhe.
-            Some sozinha se a consulta não tiver tipo definido (ex:
-            consultas antigas, de antes desse campo existir). */}
+        {/* Bolinha colorida do tipo de consulta — reforça a cor da borda,
+            dá pra reconhecer o tipo mesmo em blocos bem estreitos (visão
+            semana com vários dentistas). Some sozinha se a consulta não
+            tiver tipo definido (ex: consultas antigas, de antes desse
+            campo existir). */}
         {appt.type && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_DOT_COLORS[appt.type] ?? "bg-ink-faint"}`} />}
         {start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
         {!compact && ` · ${appt.patient?.name ?? "Paciente"}`}
@@ -831,7 +847,10 @@ function AppointmentBlock({
       {compact && (
         <p className="text-[11px] leading-tight truncate">{appt.patient?.name ?? "Paciente"}</p>
       )}
-      {!compact && height > 34 && appt.procedure && (
+      {/* Antes só aparecia na visão "Dia" (!compact) — a visão "Semana"
+          também tem altura de sobra quando a consulta dura bastante, então
+          o procedimento aparece nela também agora, não só no hover/tooltip. */}
+      {height > 34 && appt.procedure && (
         <p className="text-[11px] leading-tight truncate opacity-80">{appt.procedure}</p>
       )}
     </button>
