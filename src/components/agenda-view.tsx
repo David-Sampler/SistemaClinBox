@@ -117,6 +117,14 @@ export function AgendaView({
 }) {
   const [view, setView] = useState<View>("day");
   const [date, setDate] = useState(todayISO());
+  // Enquanto isso for true, a tela "segue" o dia de hoje sozinha — se a
+  // pessoa deixar a aba aberta passando da meia-noite, o "Hoje" nunca
+  // ficava preso no dia de ontem (o destaque de "hoje" na visão Semana
+  // corrigia sozinho, mas o dia mostrado na tela não). Vira false assim
+  // que a pessoa navega manualmente (setas, calendário), pra nunca
+  // "puxar" o usuário de volta pra hoje contra a vontade dele; volta a
+  // ser true ao clicar em "Hoje" de novo.
+  const [followingToday, setFollowingToday] = useState(true);
   const [dentistFilter, setDentistFilter] = useState("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +164,16 @@ export function AgendaView({
     return () => clearInterval(interval);
   }, []);
 
+  // Se a tela ainda está "seguindo hoje" (ninguém navegou manualmente) e
+  // o dia virou de verdade (aba aberta passando da meia-noite), avança
+  // o dia mostrado sozinho — sem isso, ficava preso no dia de ontem até
+  // alguém recarregar a página. Roda de novo a cada "tick" de `now`.
+  useEffect(() => {
+    if (followingToday && date !== todayISO()) {
+      setDate(todayISO());
+    }
+  }, [now, followingToday, date]);
+
   // Devolve a lista carregada (não só guarda no estado) pra quem precisa
   // conferir o resultado logo em seguida — ex: depois de editar uma
   // consulta, pra atualizar o painel lateral com os dados já populados
@@ -182,6 +200,22 @@ export function AgendaView({
     setFormTime(opts?.time ?? "");
     setFormDentist(opts?.dentistId ?? "");
     setShowForm(true);
+  }
+
+  // Clicar no nome de um dentista filtra a agenda só pra ele E já pula
+  // direto pro dia da próxima consulta marcada dele (a partir de hoje)
+  // — sem isso, a pessoa clicava no filtro e podia cair numa tela vazia
+  // se a data atual não tivesse nada marcado pra esse dentista.
+  async function goToDentistNextAppointment(dentistId: string) {
+    setDentistFilter(dentistId);
+    setView("day");
+    const res = await fetch(`/api/appointments?dentist=${dentistId}&from=${todayISO()}T00:00:00.000Z&limit=1`);
+    const data = await res.json();
+    const next = data.appointments?.[0];
+    if (next) {
+      setFollowingToday(false);
+      setDate(format(new Date(next.start), "yyyy-MM-dd"));
+    }
   }
 
   // Converte onde a pessoa clicou na grade (posição vertical, em px) num
@@ -300,9 +334,11 @@ export function AgendaView({
   }
 
   function goPrev() {
+    setFollowingToday(false);
     setDate(format(addDays(parseISO(date), view === "week" ? -7 : -1), "yyyy-MM-dd"));
   }
   function goNext() {
+    setFollowingToday(false);
     setDate(format(addDays(parseISO(date), view === "week" ? 7 : 1), "yyyy-MM-dd"));
   }
 
@@ -333,7 +369,10 @@ export function AgendaView({
             <ChevronLeft size={16} />
           </button>
           <button
-            onClick={() => setDate(todayISO())}
+            onClick={() => {
+              setFollowingToday(true);
+              setDate(todayISO());
+            }}
             className="px-2.5 h-8 text-xs font-medium rounded-md text-ink-muted hover:bg-surface-soft transition-colors"
           >
             Hoje
@@ -354,7 +393,10 @@ export function AgendaView({
         <input
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => {
+            setFollowingToday(false);
+            setDate(e.target.value);
+          }}
           className="text-sm text-ink-muted bg-transparent border-none focus:outline-none cursor-pointer"
         />
 
@@ -432,10 +474,14 @@ export function AgendaView({
                   );
                   return (
                     <div key={dentist.id} className="flex-1 min-w-[200px]">
-                      <div className="h-11 border-b border-line flex items-center gap-2 px-3 sticky top-0 bg-surface z-10">
+                      <button
+                        onClick={() => goToDentistNextAppointment(dentist.id)}
+                        title="Ir para a próxima consulta desse dentista"
+                        className="w-full h-11 border-b border-line flex items-center gap-2 px-3 sticky top-0 bg-surface z-10 hover:bg-surface-soft transition-colors"
+                      >
                         <UserAvatar userId={dentist.id} name={dentist.name} size={22} />
                         <span className="text-sm font-medium text-ink truncate">{dentist.name}</span>
-                      </div>
+                      </button>
                       <div
                         className="relative cursor-pointer"
                         style={{ height: GRID_HEIGHT }}

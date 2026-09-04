@@ -14,6 +14,10 @@ export async function GET(req: NextRequest) {
   const dentist = req.nextUrl.searchParams.get("dentist");
   const from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
+  // "limit=1" é usado pra achar só a PRÓXIMA consulta de um dentista
+  // (clicar no nome dele na agenda pula direto pra essa data) — sem
+  // precisar trazer a lista inteira só pra pegar a primeira.
+  const limit = req.nextUrl.searchParams.get("limit");
 
   const filter: Record<string, unknown> = {};
   if (dentist) filter.dentist = dentist;
@@ -24,11 +28,13 @@ export async function GET(req: NextRequest) {
     };
   }
 
-  const appointments = await Appointment.find(filter)
+  let query = Appointment.find(filter)
     .populate("patient", "name phone")
     .populate("dentist", "name")
-    .sort({ start: 1 })
-    .lean();
+    .sort({ start: 1 });
+  if (limit) query = query.limit(Number(limit));
+
+  const appointments = await query.lean();
 
   return NextResponse.json({ appointments });
 }
