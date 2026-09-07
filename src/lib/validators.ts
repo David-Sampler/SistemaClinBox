@@ -200,6 +200,17 @@ export const userUpdateSchema = z.object({
   active: z.boolean().optional(),
 });
 
+// "Esqueci minha senha": pedir o link (só o e-mail) e depois usar o
+// link (e-mail + código que veio nele + a senha nova escolhida).
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+});
+export const resetPasswordSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  token: z.string().min(1, "Link inválido"),
+  password: z.string().min(6, "Senha deve ter ao menos 6 caracteres"),
+});
+
 // Documentos que a clínica emite pro paciente: atestado, laudo,
 // declaração de comparecimento e receita. "content" é o texto corrido
 // (atestado/laudo/presença); receita usa "items" em vez disso — por

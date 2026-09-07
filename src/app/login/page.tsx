@@ -3,6 +3,7 @@
 "use client";
 
 import { FormEvent, Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
@@ -180,7 +181,10 @@ function LoginForm() {
                 </button>
               </div>
               <p className="text-xs text-ink-faint mt-1.5">
-                Esqueceu a senha? Peça para um administrador redefinir em Equipe.
+                <Link href="/esqueci-senha" className="text-blue hover:underline">
+                  Esqueceu a senha?
+                </Link>{" "}
+                Ou peça para um administrador redefinir em Equipe.
               </p>
             </div>
 

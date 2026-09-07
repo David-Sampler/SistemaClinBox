@@ -20,6 +20,12 @@ export interface IUser {
   avatarBlobUrl?: string; // foto de perfil, guardada no Vercel Blob (veja src/lib/blob.ts)
   avatarMimeType?: string; // ex: "image/jpeg" — necessário pra servir a foto com o Content-Type certo
   active: boolean;
+  // "Esqueci minha senha": guardamos só o HASH do código enviado por
+  // e-mail (nunca o código em si) e quando ele expira — mesma lógica de
+  // segurança da senha, mas com validade curta (ver
+  // src/app/api/auth/forgot-password/route.ts).
+  resetTokenHash?: string;
+  resetTokenExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +44,8 @@ const UserSchema = new Schema<IUser>(
     avatarMimeType: { type: String },
     // "active: false" é usado para desativar um usuário sem apagar o histórico dele do banco
     active: { type: Boolean, default: true },
+    resetTokenHash: { type: String },
+    resetTokenExpires: { type: Date },
   },
   { timestamps: true } // cria automaticamente os campos createdAt e updatedAt
 );

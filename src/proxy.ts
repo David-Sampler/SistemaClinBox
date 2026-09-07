@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
 const { auth } = NextAuth(authConfig);
 
 // Páginas que qualquer pessoa (mesmo sem login) pode acessar
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/esqueci-senha", "/redefinir-senha"];
 
 export default auth((req) => {
   const isPublic = PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path));
