@@ -187,22 +187,30 @@ export default async function PatientDetailPage({ params }: Props) {
           seu próprio atalho de edição, igual a prontuários eletrônicos de
           mercado (a foto/contato nunca fica longe do lápis de editar). */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5 flex flex-col items-center text-center gap-1">
+        <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5 flex flex-col items-center text-center gap-4">
           <Link
             href={editHref}
-            className="print:hidden self-end -mt-1 -mr-1 text-ink-faint hover:text-blue transition-colors"
+            className="print:hidden self-end -mt-3 -mr-3 -mb-4 text-ink-faint hover:text-blue transition-colors"
             aria-label="Editar dados"
           >
             <Pencil size={14} />
           </Link>
-          <PatientAvatar name={patient.name} size={72} className="text-xl" />
-          <h1 className="font-display text-lg font-semibold text-ink mt-2">{patient.name}</h1>
-          <p className="inline-flex items-center gap-1.5 text-sm text-ink-muted">
-            {patient.phone}
-            <WhatsAppLink phone={patient.phone} size={13} />
-          </p>
-          {patient.email && <p className="text-sm text-ink-muted truncate max-w-full">{patient.email}</p>}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
+
+          <PatientAvatar name={patient.name} size={76} className="text-xl" />
+
+          {/* Nome + contato ficam juntos, sem espaço extra entre eles —
+              são a mesma "unidade de informação" (quem é, como falar com
+              essa pessoa) — só o resto da ficha ganha respiro maior. */}
+          <div className="space-y-0.5">
+            <h1 className="font-display text-lg font-semibold text-ink leading-tight">{patient.name}</h1>
+            <p className="inline-flex items-center gap-1.5 text-sm text-ink-muted">
+              {patient.phone}
+              <WhatsAppLink phone={patient.phone} size={13} />
+            </p>
+            {patient.email && <p className="text-sm text-ink-muted truncate max-w-full">{patient.email}</p>}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {age !== null && (
               <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-neutral-soft text-ink-muted">{age} anos</span>
             )}
@@ -337,11 +345,16 @@ function StatCard({
 }) {
   const toneClass =
     tone === "warning" ? "bg-warning-soft text-warning" : tone === "success" ? "bg-success-soft text-success" : "bg-blue-soft text-blue";
+  // Uma "pendência" de verdade (tone warning) ganha uma borda colorida à
+  // esquerda — o mesmo recurso usado nos blocos da Agenda pra sinalizar
+  // estado sem precisar ler o texto inteiro. As outras (em dia/histórico)
+  // não precisam chamar atenção, então ficam neutras.
+  const accentBorder = tone === "warning" ? "border-l-4 border-l-warning" : "";
   return (
     // print:break-inside-avoid: sem isso, a impressão podia cortar o
     // cartão ao meio bem na quebra de página (o ícone ficava numa
     // página e o valor/rótulo pulava sozinho pra próxima).
-    <div className="fade-up print:break-inside-avoid bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4">
+    <div className={`fade-up print:break-inside-avoid bg-surface rounded-xl border border-line ${accentBorder} shadow-sm shadow-ink/[0.02] p-4`}>
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${toneClass} mb-2.5`}>
         <Icon size={16} />
       </div>
