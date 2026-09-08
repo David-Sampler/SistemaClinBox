@@ -39,6 +39,48 @@ const TYPE_STYLES: Record<DocType, string> = {
   receita: "bg-success-soft text-success",
 };
 
+// Códigos CID-10 mais usados em odontologia — sugestão pra agilizar (o
+// campo continua aceitando qualquer texto digitado, isso só preenche o
+// autocompletar do navegador). Fonte: categorias K00-K08 da CID-10
+// (cárie, polpa/periápice, gengiva/periodonto, dentes inclusos/impactados).
+const CID_SUGGESTIONS = [
+  { code: "K02.0", label: "Cárie limitada ao esmalte" },
+  { code: "K02.1", label: "Cárie da dentina" },
+  { code: "K02.9", label: "Cárie dentária, não especificada" },
+  { code: "K04.0", label: "Pulpite" },
+  { code: "K04.1", label: "Necrose da polpa" },
+  { code: "K04.6", label: "Abscesso periapical com fístula" },
+  { code: "K04.7", label: "Abscesso periapical sem fístula" },
+  { code: "K05.0", label: "Gengivite aguda" },
+  { code: "K05.1", label: "Gengivite crônica" },
+  { code: "K05.2", label: "Periodontite aguda" },
+  { code: "K05.3", label: "Periodontite crônica" },
+  { code: "K01.1", label: "Dente impactado" },
+  { code: "K08.1", label: "Perda de dentes por acidente, extração ou periodontal" },
+];
+
+// Medicamentos mais prescritos em odontologia no Brasil (antibióticos,
+// analgésicos e anti-inflamatórios de uso comum em pós-operatório e
+// infecção odontogênica) — mesma ideia do CID: só sugestão, o campo
+// continua livre pra digitar qualquer coisa. Dosagem/posologia sempre
+// fica a critério do dentista, por isso a lista traz só o nome +
+// apresentação comercial mais comum, nunca uma "receita pronta".
+const MEDICATION_SUGGESTIONS = [
+  "Amoxicilina 500mg",
+  "Amoxicilina + Clavulanato 875mg/125mg",
+  "Metronidazol 400mg",
+  "Clindamicina 300mg",
+  "Azitromicina 500mg",
+  "Dipirona sódica 500mg",
+  "Paracetamol 750mg",
+  "Paracetamol + Codeína 500mg/30mg",
+  "Ibuprofeno 600mg",
+  "Nimesulida 100mg",
+  "Diclofenaco de potássio 50mg",
+  "Cetoprofeno 100mg",
+  "Dexametasona 4mg",
+];
+
 // Texto inicial de cada tipo de documento — já com o nome do paciente
 // no lugar certo, pra economizar digitação. O dentista pode editar
 // livremente antes de emitir.
@@ -123,6 +165,7 @@ export function ClinicDocuments({
       payload.items = items
         .filter((it) => it.medication.trim())
         .map((it) => ({ medication: it.medication, dosage: it.dosage || undefined, instructions: it.instructions || undefined }));
+      payload.cid = form.get("cid") || undefined;
     } else {
       payload.content = content;
       if (type === "atestado") {
@@ -212,10 +255,27 @@ export function ClinicDocuments({
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-muted mb-1">CID (opcional)</label>
-                <input name="cid" className="input" />
+                <input name="cid" list="cid-suggestions" placeholder="ex: K04.7" className="input" />
               </div>
             </div>
           )}
+
+          {/* Sugestões de CID compartilhadas entre atestado e receita —
+              um <datalist> só aparece de verdade quando algum <input>
+              usa "list" apontando pra ele, então fica seguro deixar
+              declarado aqui fora mesmo sem estar sempre visível. */}
+          <datalist id="cid-suggestions">
+            {CID_SUGGESTIONS.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
+          </datalist>
+          <datalist id="medication-suggestions">
+            {MEDICATION_SUGGESTIONS.map((m) => (
+              <option key={m} value={m} />
+            ))}
+          </datalist>
 
           {type === "presenca" && (
             <div className="max-w-xs">
@@ -225,12 +285,18 @@ export function ClinicDocuments({
           )}
 
           {type === "receita" ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="max-w-xs">
+                <label className="block text-xs font-medium text-ink-muted mb-1">CID (opcional)</label>
+                <input name="cid" list="cid-suggestions" placeholder="ex: K04.7" className="input" />
+              </div>
+
               <p className="text-xs font-medium text-ink-muted">Medicamentos</p>
               {items.map((it, i) => (
                 <div key={i} className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1.4fr_auto] gap-2 items-start">
                   <input
                     placeholder="Medicamento"
+                    list="medication-suggestions"
                     value={it.medication}
                     onChange={(e) => updateItem(i, "medication", e.target.value)}
                     className="input"

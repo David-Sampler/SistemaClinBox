@@ -97,18 +97,21 @@ export default async function PrintDocumentPage({ params }: Props) {
               items.length === 0 ? (
                 <p className="text-sm text-ink-muted">Nenhum medicamento informado.</p>
               ) : (
-                <ol className="space-y-5">
-                  {items.map((it, i) => (
-                    <li key={i} className="flex gap-3 leading-relaxed">
-                      <span className="font-display font-semibold text-blue-strong shrink-0">{i + 1}.</span>
-                      <div>
-                        <span className="font-medium">{it.medication}</span>
-                        {it.dosage ? <span className="text-ink-muted"> — {it.dosage}</span> : ""}
-                        {it.instructions && <p className="text-sm text-ink-muted mt-0.5">{it.instructions}</p>}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                <>
+                  <ol className="space-y-5">
+                    {items.map((it, i) => (
+                      <li key={i} className="flex gap-3 leading-relaxed">
+                        <span className="font-display font-semibold text-blue-strong shrink-0">{i + 1}.</span>
+                        <div>
+                          <span className="font-medium">{it.medication}</span>
+                          {it.dosage ? <span className="text-ink-muted"> — {it.dosage}</span> : ""}
+                          {it.instructions && <p className="text-sm text-ink-muted mt-0.5">{it.instructions}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  {doc.cid && <p className="text-sm text-ink-muted mt-5">CID: {doc.cid}.</p>}
+                </>
               )
             ) : (
               <div className="space-y-4">

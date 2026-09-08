@@ -25,7 +25,7 @@ export interface IClinicDocument {
   // Receita usa a lista "items" abaixo em vez de texto corrido.
   content?: string;
   daysOff?: number; // atestado: dias de afastamento das atividades
-  cid?: string; // atestado: código CID-10, opcional
+  cid?: string; // atestado ou receita: código CID-10 do diagnóstico, opcional
   visitDate?: Date; // presença: data/hora do atendimento declarado
   items?: IPrescriptionItem[]; // receita
   issuedAt: Date;
