@@ -9,6 +9,17 @@ export function isValidPhone(raw: string): boolean {
   return d.length === 10 || d.length === 11;
 }
 
+// Normaliza um telefone brasileiro para o formato que o WhatsApp exige:
+// só dígitos e com o código do país (55) na frente. Serve tanto para o
+// link "wa.me" (src/components/whatsapp-link.tsx) quanto para o envio pela
+// API oficial (src/lib/whatsapp.ts). Retorna null quando não sobra dígito.
+// Aceita número que já venha com o 55 (mais de 11 dígitos) e usa como está.
+export function toWhatsAppNumber(raw: string | null | undefined): string | null {
+  const digits = onlyDigits(raw ?? "");
+  if (!digits) return null;
+  return digits.length > 11 ? digits : `55${digits}`;
+}
+
 // Formata enquanto o usuário digita: (00) 00000-0000 ou (00) 0000-0000
 export function formatPhone(raw: string): string {
   const d = onlyDigits(raw).slice(0, 11);

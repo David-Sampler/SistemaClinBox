@@ -3,7 +3,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { CreditCard, FileSpreadsheet, Pencil, Plus, Printer, Trash2, X } from "lucide-react";
+import { CreditCard, FileSpreadsheet, Pencil, Plus, Printer, StickyNote, Trash2, X } from "lucide-react";
 import { Modal } from "@/components/modal";
 
 type BudgetItem = { description: string; tooth?: string; value: number };
@@ -300,57 +300,114 @@ export function PatientFinance({
         {budgets.length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhum orçamento cadastrado.</p>
         ) : (
-          <ul className="space-y-3">
-            {budgets.map((b) => (
-              <li key={b._id} className="border border-line rounded-xl p-5 bg-surface">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <p className="font-display text-lg font-semibold text-ink tabular">{currency(b.total)}</p>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <BudgetStatusSelect status={b.status} onChange={(s) => handleBudgetStatus(b._id, s)} />
-                    <a
-                      href={`/orcamentos/${b._id}/imprimir`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"
-                      aria-label="Imprimir ou baixar PDF do orçamento"
-                      title="Imprimir / baixar PDF"
-                    >
-                      <Printer size={14} />
-                    </a>
-                    <button
-                      onClick={() => setEditingBudget(b)}
-                      className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"
-                      aria-label="Editar orçamento"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteBudget(b._id)}
-                      className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
-                      aria-label="Excluir orçamento"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-                <ul className="text-sm divide-y divide-line-soft border-t border-line-soft">
-                  {b.items.map((i, idx) => (
-                    <li key={idx} className="flex items-center justify-between py-1.5">
-                      <span className="text-ink-muted">
-                        {i.description}
-                        {i.tooth && (
-                          <span className="ml-1.5 text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-soft text-blue-strong">
-                            dente {i.tooth}
-                          </span>
+          <ul className="space-y-4">
+            {budgets.map((b) => {
+              const s = {
+                pendente: { bar: "bg-ink-faint", ring: "ring-line" },
+                aprovado: { bar: "bg-success", ring: "ring-success/30" },
+                rejeitado: { bar: "bg-danger", ring: "ring-danger/30" },
+              }[b.status];
+              const created = new Date(b.createdAt).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              });
+              const dentistName = dentists.find((d) => d.id === b.dentist)?.name;
+              return (
+                <li
+                  key={b._id}
+                  className={`card-hover group relative overflow-hidden rounded-2xl bg-surface ring-1 ${s.ring}`}
+                >
+                  {/* barra de status na lateral */}
+                  <span className={`absolute inset-y-0 left-0 w-1 ${s.bar}`} aria-hidden />
+
+                  {/* cabeçalho */}
+                  <div className="flex items-start justify-between gap-3 border-b border-line-soft bg-surface-soft px-5 pt-4 pb-4">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                        Valor total
+                      </p>
+                      <p className="font-display text-[1.7rem] font-semibold tracking-tight text-ink tabular leading-none mt-1">
+                        {currency(b.total)}
+                      </p>
+                      <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-ink-faint">
+                        {dentistName && (
+                          <>
+                            <span className="text-ink-muted">{dentistName}</span>
+                            <span aria-hidden>·</span>
+                          </>
                         )}
-                      </span>
-                      <span className="text-ink-faint tabular shrink-0 pl-3">{currency(i.value)}</span>
-                    </li>
-                  ))}
-                </ul>
-                {b.notes && <p className="text-sm text-ink-muted mt-3 pt-3 border-t border-line-soft">{b.notes}</p>}
-              </li>
-            ))}
+                        <span>{created}</span>
+                        <span aria-hidden>·</span>
+                        <span>
+                          {b.items.length} {b.items.length === 1 ? "procedimento" : "procedimentos"}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <BudgetStatusSelect status={b.status} onChange={(st) => handleBudgetStatus(b._id, st)} />
+                      <a
+                        href={`/orcamentos/${b._id}/imprimir`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"
+                        aria-label="Imprimir ou baixar PDF do orçamento"
+                        title="Imprimir / baixar PDF"
+                      >
+                        <Printer size={15} />
+                      </a>
+                      <button
+                        onClick={() => setEditingBudget(b)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"
+                        aria-label="Editar orçamento"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBudget(b._id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
+                        aria-label="Excluir orçamento"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* itens */}
+                  <ul className="px-2.5 py-2">
+                    {b.items.map((i, idx) => (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-surface-soft"
+                      >
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-soft text-[10px] font-bold text-ink-faint tabular ring-1 ring-line-soft">
+                          {idx + 1}
+                        </span>
+                        <span className="min-w-0 flex-1 text-ink-muted">
+                          {i.description}
+                          {i.tooth && (
+                            <span className="ml-1.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-blue-soft px-1 text-[10px] font-bold text-blue-strong align-middle">
+                              {i.tooth}
+                            </span>
+                          )}
+                        </span>
+                        <span className="shrink-0 pt-px text-ink tabular font-semibold">{currency(i.value)}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {b.notes && (
+                    <div className="mx-5 mb-5 mt-1 rounded-xl border border-line-soft bg-surface-soft px-4 py-3">
+                      <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                        <StickyNote size={13} className="shrink-0" />
+                        Observações
+                      </p>
+                      <p className="text-sm text-ink-muted leading-relaxed">{b.notes}</p>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -517,21 +574,30 @@ function BudgetStatusSelect({
   status: Budget["status"];
   onChange: (s: Budget["status"]) => void;
 }) {
-  const styles: Record<Budget["status"], string> = {
-    pendente: "bg-neutral-soft text-ink",
-    aprovado: "bg-success-soft text-success",
-    rejeitado: "bg-danger-soft text-danger",
+  const cfg: Record<Budget["status"], { wrap: string; dot: string }> = {
+    pendente: { wrap: "bg-neutral-soft text-ink-muted ring-line", dot: "bg-ink-faint" },
+    aprovado: { wrap: "bg-success-soft text-success ring-success/30", dot: "bg-success" },
+    rejeitado: { wrap: "bg-danger-soft text-danger ring-danger/30", dot: "bg-danger" },
   };
+  const chevron =
+    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23808a99' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")";
   return (
-    <select
-      value={status}
-      onChange={(e) => onChange(e.target.value as Budget["status"])}
-      className={`text-xs font-medium rounded-full px-2 py-1 border-0 ${styles[status]}`}
-    >
-      <option value="pendente">Pendente</option>
-      <option value="aprovado">Aprovado</option>
-      <option value="rejeitado">Rejeitado</option>
-    </select>
+    <span className={`relative inline-flex items-center rounded-full ring-1 ${cfg[status].wrap}`}>
+      <span
+        className={`pointer-events-none absolute left-2.5 h-1.5 w-1.5 rounded-full ${cfg[status].dot}`}
+        aria-hidden
+      />
+      <select
+        value={status}
+        onChange={(e) => onChange(e.target.value as Budget["status"])}
+        className="appearance-none bg-transparent bg-no-repeat text-xs font-semibold rounded-full pl-6 pr-6 py-1 border-0 cursor-pointer focus:outline-none"
+        style={{ backgroundImage: chevron, backgroundPosition: "right 0.5rem center" }}
+      >
+        <option value="pendente">Pendente</option>
+        <option value="aprovado">Aprovado</option>
+        <option value="rejeitado">Rejeitado</option>
+      </select>
+    </span>
   );
 }
 
