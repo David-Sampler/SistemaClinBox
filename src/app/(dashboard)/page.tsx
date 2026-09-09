@@ -4,8 +4,6 @@
 // É um server component: busca os dados direto no banco (mais rápido,
 // não precisa passar pela API HTTP já que já estamos no servidor).
 import Link from "next/link";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import { Patient } from "@/models/Patient";
@@ -21,6 +19,8 @@ import {
   Stethoscope,
   Cake,
 } from "lucide-react";
+import { brazilDayBounds, brazilHour, brazilMonthStart, brazilNow } from "@/lib/timezone";
+import { getClinicSettings } from "@/models/ClinicSettings";
 import { StatusBadge } from "@/components/status-badge";
 import { UserAvatar } from "@/components/user-avatar";
 import { PatientAvatar } from "@/components/patient-avatar";
@@ -47,7 +47,7 @@ function randomQuote() {
 }
 
 function greeting() {
-  const hour = new Date().getHours();
+  const hour = brazilHour();
   if (hour < 12) return "Bom dia";
   if (hour < 18) return "Boa tarde";
   return "Boa noite";
@@ -55,11 +55,15 @@ function greeting() {
 
 // Aniversariantes de hoje até os próximos 6 dias — compara só mês/dia
 // (não o ano), então funciona mesmo virando o ano no meio da janela.
+// Usa getters/setters UTC de propósito: "today" vem de brazilNow(), que
+// codifica o dia de Brasília nos campos UTC do Date (ver
+// src/lib/timezone.ts) — ler com os getters LOCAIS aqui misturaria o
+// fuso do servidor de novo e desfaria a correção.
 function daysUntilBirthday(birthDate: Date, today: Date, windowDays: number) {
   for (let i = 0; i <= windowDays; i++) {
     const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    if (d.getMonth() === birthDate.getMonth() && d.getDate() === birthDate.getDate()) {
+    d.setUTCDate(d.getUTCDate() + i);
+    if (d.getUTCMonth() === birthDate.getUTCMonth() && d.getUTCDate() === birthDate.getUTCDate()) {
       return i;
     }
   }
@@ -69,16 +73,10 @@ function daysUntilBirthday(birthDate: Date, today: Date, windowDays: number) {
 async function getDashboardData() {
   await connectDB();
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const { startOfDay, endOfDay } = brazilDayBounds();
+  const startOfMonth = brazilMonthStart();
 
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const [totalPatients, todayAppointments, pendingPayments, receivedThisMonth, patientsWithBirthday] =
+  const [totalPatients, todayAppointments, pendingPayments, receivedThisMonth, patientsWithBirthday, clinicSettings] =
     await Promise.all([
       Patient.countDocuments({ active: true }),
       Appointment.find({
@@ -94,20 +92,27 @@ async function getDashboardData() {
         { $match: { status: "pago", paidDate: { $gte: startOfMonth } } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
-      Patient.find({ active: true, birthDate: { $ne: null } }).select("name birthDate").lean(),
+      Patient.find({ active: true, birthDate: { $ne: null } }).select("name birthDate phone").lean(),
+      getClinicSettings(),
     ]);
 
   const pendingTotal = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
   const receivedTotal = receivedThisMonth[0]?.total ?? 0;
 
-  const todayForBirthdays = new Date();
-  todayForBirthdays.setHours(0, 0, 0, 0);
+  // Mesmo critério do papel timbrado (ClinicLetterhead): "Minha Clínica"
+  // é o valor padrão de quem nunca abriu Configurações — nesse caso a
+  // mensagem de parabéns usa um texto genérico em vez do nome de banco de dados.
+  const clinicName =
+    clinicSettings.name && clinicSettings.name !== "Minha Clínica" ? clinicSettings.name : "nossa equipe";
+
+  const todayForBirthdays = brazilNow();
   const birthdaysThisWeek = patientsWithBirthday
     .map((p) => ({
       name: p.name,
+      phone: p.phone as string | undefined,
       daysAway: p.birthDate ? daysUntilBirthday(new Date(p.birthDate), todayForBirthdays, 6) : null,
     }))
-    .filter((p): p is { name: string; daysAway: number } => p.daysAway !== null)
+    .filter((p): p is { name: string; phone: string | undefined; daysAway: number } => p.daysAway !== null)
     .sort((a, b) => a.daysAway - b.daysAway);
 
   return {
@@ -117,6 +122,7 @@ async function getDashboardData() {
     pendingTotal,
     receivedTotal,
     birthdaysThisWeek,
+    clinicName,
   };
 }
 
@@ -129,11 +135,19 @@ export default async function DashboardHome() {
     pendingTotal,
     receivedTotal,
     birthdaysThisWeek,
+    clinicName,
   } = await getDashboardData();
 
   const userName = session?.user?.name ?? "Usuário";
   const userId = session?.user?.id ?? "";
-  const todayLabel = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
+  // "timeZone" explícito: funciona certo não importa o fuso configurado
+  // no processo do servidor (ver src/lib/timezone.ts pro porquê disso importar).
+  const todayLabel = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "America/Sao_Paulo",
+  });
   const quote = randomQuote();
 
   return (
@@ -261,11 +275,21 @@ export default async function DashboardHome() {
             ) : (
               <ul className="divide-y divide-line-soft">
                 {birthdaysThisWeek.map((b, i) => (
-                  <li key={i} className="px-5 py-2.5 flex items-center justify-between text-sm">
-                    <span className="text-ink">{b.name}</span>
-                    <span className="text-ink-faint text-xs">
-                      {b.daysAway === 0 ? "Hoje" : b.daysAway === 1 ? "Amanhã" : `em ${b.daysAway} dias`}
-                    </span>
+                  <li key={i} className="px-5 py-2.5 flex items-center justify-between gap-2 text-sm">
+                    <div className="min-w-0">
+                      <span className="text-ink truncate">{b.name}</span>
+                      <span className="block text-ink-faint text-xs">
+                        {b.daysAway === 0 ? "Hoje" : b.daysAway === 1 ? "Amanhã" : `em ${b.daysAway} dias`}
+                      </span>
+                    </div>
+                    {b.daysAway === 0 && b.phone && (
+                      <WhatsAppLink
+                        phone={b.phone}
+                        message={`Feliz aniversário, ${b.name.split(" ")[0]}! 🎉 Toda a equipe da ${clinicName} deseja um dia maravilhoso, cheio de saúde e sorrisos!`}
+                        label="Parabéns"
+                        className="shrink-0 !text-xs !py-1"
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

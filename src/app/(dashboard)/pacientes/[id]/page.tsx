@@ -36,6 +36,7 @@ import { User } from "@/models/User";
 import { Appointment } from "@/models/Appointment";
 import { Payment } from "@/models/Payment";
 import { ClinicalRecord } from "@/models/ClinicalRecord";
+import { brazilNow } from "@/lib/timezone";
 import { PatientTabs } from "@/components/patient-tabs";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
@@ -52,13 +53,17 @@ const genderLabels: Record<string, string> = { masculino: "Masculino", feminino:
 // Retorna null pra data no futuro (cadastro com erro de digitação) em
 // vez de uma "idade" negativa sem sentido na tela.
 function calculateAge(birthDate: Date) {
-  const today = new Date();
+  // brazilNow() + getters UTC: mesmo motivo do painel inicial (ver
+  // src/lib/timezone.ts) — sem isso, o servidor (que roda em UTC) podia
+  // achar que já virou o dia do aniversário (ou ainda não) por até 3
+  // horas de diferença do horário de Brasília.
+  const today = brazilNow();
   if (birthDate > today) return null;
 
-  let age = today.getFullYear() - birthDate.getFullYear();
+  let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
   const hasHadBirthdayThisYear =
-    today.getMonth() > birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+    today.getUTCMonth() > birthDate.getUTCMonth() ||
+    (today.getUTCMonth() === birthDate.getUTCMonth() && today.getUTCDate() >= birthDate.getUTCDate());
   if (!hasHadBirthdayThisYear) age--;
   return age;
 }

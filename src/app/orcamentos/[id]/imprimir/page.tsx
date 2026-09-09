@@ -71,13 +71,22 @@ export default async function PrintBudgetPage({ params }: Props) {
             {patient?.cpf && <p className="text-xs text-ink-muted mt-0.5">CPF {patient.cpf}</p>}
           </div>
 
-          {/* Itens do orçamento */}
-          <table className="w-full text-sm border-collapse mb-4">
+          {/* Itens do orçamento — "table-fixed" + <colgroup> de propósito:
+              sem largura de coluna EXPLÍCITA (não só no cabeçalho), o
+              mecanismo de impressão podia calcular a largura da coluna
+              "Dente" de um jeito no cabeçalho e de outro nas linhas,
+              desalinhando os números na hora de virar PDF. */}
+          <table className="w-full table-fixed text-sm border-collapse mb-4">
+            <colgroup>
+              <col />
+              <col style={{ width: "70px" }} />
+              <col style={{ width: "110px" }} />
+            </colgroup>
             <thead>
               <tr className="border-b-2 border-ink/10 text-left text-xs text-ink-faint uppercase tracking-wide">
                 <th className="pb-2 font-medium">Procedimento</th>
-                <th className="pb-2 font-medium text-center w-20">Dente</th>
-                <th className="pb-2 font-medium text-right w-32">Valor</th>
+                <th className="pb-2 font-medium text-center">Dente</th>
+                <th className="pb-2 font-medium text-right">Valor</th>
               </tr>
             </thead>
             <tbody>

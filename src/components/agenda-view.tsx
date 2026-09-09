@@ -801,6 +801,15 @@ export function AgendaView({
             </dl>
           )}
 
+          {!editingSchedule && selected.patient?.phone && (
+            <WhatsAppLink
+              phone={selected.patient.phone}
+              message={buildReminderMessage(selected)}
+              label="Enviar lembrete por WhatsApp"
+              className="w-full justify-center mb-6"
+            />
+          )}
+
           {!editingSchedule && (
             <>
               <p className="text-xs font-medium text-ink-muted uppercase tracking-wide mb-2">
@@ -963,6 +972,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+// Monta o texto do lembrete de consulta — quem manda ainda vê e pode
+// editar antes de enviar (é um link "wa.me", não a API automática do
+// WhatsApp, que ainda não está pronta), então serve bem como lembrete
+// manual: a recepção abre a consulta, clica e confirma o envio.
+function buildReminderMessage(appt: Appointment) {
+  const firstName = (appt.patient?.name ?? appt.patientName ?? "").split(" ")[0];
+  const dateLabel = format(new Date(appt.start), "EEEE, d 'de' MMMM", { locale: ptBR });
+  const timeLabel = format(new Date(appt.start), "HH:mm");
+  const dentistPart = appt.dentist?.name ? ` com ${appt.dentist.name}` : "";
+  return `Olá${firstName ? ", " + firstName : ""}! Passando para lembrar da sua consulta na ${dateLabel}, às ${timeLabel}${dentistPart}. Qualquer dúvida, estamos à disposição! 😊`;
 }
 
 // Campo de paciente do formulário de agendar/reagendar: por padrão é um
