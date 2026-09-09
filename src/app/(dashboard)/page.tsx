@@ -12,6 +12,7 @@ import { Payment } from "@/models/Payment";
 import {
   Users,
   CalendarDays,
+  CalendarClock,
   Wallet,
   ArrowRight,
   UserPlus,
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 import { brazilDayBounds, brazilHour, brazilMonthStart, brazilNow } from "@/lib/timezone";
 import { getClinicSettings } from "@/models/ClinicSettings";
-import { StatusBadge } from "@/components/status-badge";
+import { StatusBadge, isAppointmentOverdue } from "@/components/status-badge";
 import { UserAvatar } from "@/components/user-avatar";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
@@ -70,13 +71,33 @@ function daysUntilBirthday(birthDate: Date, today: Date, windowDays: number) {
   return null;
 }
 
+// Junta os nomes dos dentistas numa frase curta: "com Ana", "com Ana e
+// João", "com Ana, João e mais 2".
+function dentistsPhrase(names: string[]): string {
+  if (names.length === 0) return "";
+  if (names.length === 1) return `com ${names[0]}`;
+  if (names.length === 2) return `com ${names[0]} e ${names[1]}`;
+  return `com ${names[0]}, ${names[1]} e mais ${names.length - 2}`;
+}
+
 async function getDashboardData() {
   await connectDB();
 
   const { startOfDay, endOfDay } = brazilDayBounds();
+  // Amanhã em Brasília: desloca a referência 24h (o Brasil não tem mais
+  // horário de verão, então +24h é sempre o dia seguinte do calendário).
+  const tomorrow = brazilDayBounds(new Date(Date.now() + 24 * 60 * 60 * 1000));
   const startOfMonth = brazilMonthStart();
 
-  const [totalPatients, todayAppointments, pendingPayments, receivedThisMonth, patientsWithBirthday, clinicSettings] =
+  const [
+    totalPatients,
+    todayAppointments,
+    tomorrowAppointments,
+    pendingPayments,
+    receivedThisMonth,
+    patientsWithBirthday,
+    clinicSettings,
+  ] =
     await Promise.all([
       Patient.countDocuments({ active: true }),
       Appointment.find({
@@ -84,6 +105,13 @@ async function getDashboardData() {
         status: { $nin: ["cancelado"] },
       })
         .populate("patient", "name phone")
+        .populate("dentist", "name")
+        .sort({ start: 1 })
+        .lean(),
+      Appointment.find({
+        start: { $gte: tomorrow.startOfDay, $lte: tomorrow.endOfDay },
+        status: { $nin: ["cancelado"] },
+      })
         .populate("dentist", "name")
         .sort({ start: 1 })
         .lean(),
@@ -115,9 +143,21 @@ async function getDashboardData() {
     .filter((p): p is { name: string; phone: string | undefined; daysAway: number } => p.daysAway !== null)
     .sort((a, b) => a.daysAway - b.daysAway);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tomorrowDentists = [
+    ...new Set(
+      tomorrowAppointments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((a) => (a.dentist as any)?.name as string | undefined)
+        .filter((n): n is string => !!n)
+    ),
+  ];
+
   return {
     totalPatients,
     todayAppointments,
+    tomorrowCount: tomorrowAppointments.length,
+    tomorrowDentistsPhrase: dentistsPhrase(tomorrowDentists),
     pendingCount: pendingPayments.length,
     pendingTotal,
     receivedTotal,
@@ -131,6 +171,8 @@ export default async function DashboardHome() {
   const {
     totalPatients,
     todayAppointments,
+    tomorrowCount,
+    tomorrowDentistsPhrase,
     pendingCount,
     pendingTotal,
     receivedTotal,
@@ -180,6 +222,26 @@ export default async function DashboardHome() {
           {quote}
         </p>
       </div>
+
+      {/* Aviso discreto: consultas marcadas para amanhã — só um lembrete
+          pra equipe conferir a agenda com antecedência. Some quando não há
+          nada marcado. */}
+      {tomorrowCount > 0 && (
+        <div className="fade-up flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm shadow-sm shadow-ink/[0.02]">
+          <CalendarClock size={16} className="shrink-0 text-blue" />
+          <p className="flex-1 text-ink-muted">
+            <span className="font-medium text-ink">Amanhã</span> há {tomorrowCount}{" "}
+            {tomorrowCount === 1 ? "consulta" : "consultas"}
+            {tomorrowDentistsPhrase && ` ${tomorrowDentistsPhrase}`}. Vale conferir a agenda.
+          </p>
+          <Link
+            href="/agenda"
+            className="shrink-0 flex items-center gap-1 text-blue hover:text-blue-strong hover:underline"
+          >
+            Ver <ArrowRight size={13} />
+          </Link>
+        </div>
+      )}
 
       {/* Atalhos para as ações mais comuns do dia a dia */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -244,7 +306,10 @@ export default async function DashboardHome() {
                           minute: "2-digit",
                         })}
                       </p>
-                      <StatusBadge status={appt.status} />
+                      <StatusBadge
+                        status={appt.status}
+                        overdue={isAppointmentOverdue({ status: appt.status, end: appt.end as string | Date })}
+                      />
                     </div>
                     <WhatsAppLink phone={patient?.phone} size={14} />
                   </li>
@@ -282,14 +347,25 @@ export default async function DashboardHome() {
                         {b.daysAway === 0 ? "Hoje" : b.daysAway === 1 ? "Amanhã" : `em ${b.daysAway} dias`}
                       </span>
                     </div>
-                    {b.daysAway === 0 && b.phone && (
-                      <WhatsAppLink
-                        phone={b.phone}
-                        message={`Feliz aniversário, ${b.name.split(" ")[0]}! 🎉 Toda a equipe da ${clinicName} deseja um dia maravilhoso, cheio de saúde e sorrisos!`}
-                        label="Parabéns"
-                        className="shrink-0 !text-xs !py-1"
-                      />
-                    )}
+                    {b.phone &&
+                      (b.daysAway === 0 ? (
+                        // No dia: botão em destaque com o texto de parabéns.
+                        <WhatsAppLink
+                          phone={b.phone}
+                          message={`Feliz aniversário, ${b.name.split(" ")[0]}! 🎉 Toda a equipe da ${clinicName} deseja um dia maravilhoso, cheio de saúde e sorrisos!`}
+                          label="Parabéns"
+                          className="shrink-0 !text-xs !py-1"
+                        />
+                      ) : (
+                        // Nos próximos dias: só o ícone, já com a mensagem
+                        // pronta pra quem quiser adiantar os parabéns.
+                        <WhatsAppLink
+                          phone={b.phone}
+                          message={`Oi, ${b.name.split(" ")[0]}! Passando para desejar um feliz aniversário! 🎉 Toda a equipe da ${clinicName} deseja um dia maravilhoso, cheio de saúde e sorrisos!`}
+                          size={14}
+                          className="shrink-0"
+                        />
+                      ))}
                   </li>
                 ))}
               </ul>

@@ -7,10 +7,10 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import { addDays, format, isSameDay, isToday, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { StatusBadge } from "@/components/status-badge";
+import { StatusBadge, isAppointmentOverdue } from "@/components/status-badge";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { UserAvatar } from "@/components/user-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
@@ -795,10 +795,20 @@ export function AgendaView({
               <div className="flex justify-between items-center">
                 <dt className="text-ink-muted">Status</dt>
                 <dd>
-                  <StatusBadge status={selected.status} />
+                  <StatusBadge status={selected.status} overdue={isAppointmentOverdue(selected)} />
                 </dd>
               </div>
             </dl>
+          )}
+
+          {!editingSchedule && isAppointmentOverdue(selected) && (
+            <div className="mb-4 flex gap-2 rounded-lg border border-warning/20 bg-warning-soft px-3 py-2 text-xs text-warning">
+              <AlertTriangle size={14} className="mt-px shrink-0" />
+              <span>
+                Essa consulta já passou do horário e continua sem baixa. Marque como{" "}
+                <strong>Concluída</strong> ou <strong>Faltou</strong>.
+              </span>
+            </div>
           )}
 
           {!editingSchedule && selected.patient?.phone && (
@@ -914,8 +924,20 @@ function AppointmentBlock({
     cancelado: { bg: "bg-danger-soft", border: "border-danger/30", text: "text-ink-faint line-through" },
     falta: { bg: "bg-danger-soft", border: "border-danger/40", text: "text-danger" },
   };
-  const statusStyle = STATUS_STYLES[appt.status] ?? STATUS_STYLES.agendado;
-  const borderColor = (appt.type && TYPE_BORDER_COLORS[appt.type]) || statusStyle.border;
+  // Consulta cujo horário já passou e ninguém deu baixa (segue Agendado/
+  // Confirmado): fica na cor de alerta e ganha um ícone, pra não passar
+  // batido que está pendente de resolução. É derivado da hora atual, não
+  // um status salvo — o bloco já re-renderiza a cada minuto (tick do `now`
+  // no componente pai).
+  const overdue = isAppointmentOverdue(appt);
+  const statusStyle = overdue
+    ? { bg: "bg-warning-soft", border: "border-warning/50", text: "text-warning" }
+    : STATUS_STYLES[appt.status] ?? STATUS_STYLES.agendado;
+  // Atrasada: a borda esquerda também vai pra cor de alerta (ignora a cor
+  // do tipo de consulta), reforçando o aviso.
+  const borderColor = overdue
+    ? "border-warning/70"
+    : (appt.type && TYPE_BORDER_COLORS[appt.type]) || statusStyle.border;
 
   // Quando há mais de uma consulta no mesmo horário (visão semanal com
   // vários dentistas), cada uma ocupa uma "raia" lado a lado.
@@ -939,10 +961,17 @@ function AppointmentBlock({
         onClick();
       }}
       style={style}
-      title={appt.type ? TYPE_LABELS[appt.type] ?? appt.type : undefined}
+      title={
+        overdue
+          ? "Atrasada — passou do horário e continua sem baixa"
+          : appt.type
+            ? TYPE_LABELS[appt.type] ?? appt.type
+            : undefined
+      }
       className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1 rounded-md border-l-4 text-left overflow-hidden shadow-sm shadow-ink/[0.04] hover:brightness-95 hover:shadow-md hover:scale-[1.02] transition-[filter,box-shadow,transform] ${borderColor} ${statusStyle.bg} ${statusStyle.text}`}
     >
       <p className="text-[11px] font-semibold leading-tight truncate inline-flex items-center gap-1">
+        {overdue && <AlertTriangle size={11} className="shrink-0" />}
         {/* Bolinha colorida do tipo de consulta — reforça a cor da borda,
             dá pra reconhecer o tipo mesmo em blocos bem estreitos (visão
             semana com vários dentistas). Some sozinha se a consulta não
