@@ -68,7 +68,11 @@ export const patientSchema = z.object({
 });
 
 export const appointmentSchema = z.object({
-  patient: z.string().min(1, "Paciente obrigatório"),
+  // Nenhum dos dois é obrigatório aqui: a rota da API confere que pelo
+  // menos um veio preenchido (não dá pra marcar sem nome nenhum, mas
+  // não precisa ser um paciente já cadastrado — ver src/app/api/appointments/route.ts).
+  patient: z.string().optional(),
+  patientName: z.string().trim().min(1).optional(),
   dentist: z.string().min(1, "Dentista obrigatório"),
   start: z.string().min(1, "Data/hora inicial obrigatória"),
   end: z.string().min(1, "Data/hora final obrigatória"),

@@ -218,9 +218,9 @@ export default async function DashboardHome() {
                 const dentist = appt.dentist as any;
                 return (
                   <li key={String(appt._id)} className="px-5 py-3 flex items-center gap-3 text-sm">
-                    <PatientAvatar name={patient?.name ?? "?"} size={32} />
+                    <PatientAvatar name={patient?.name ?? appt.patientName ?? "?"} size={32} />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-ink truncate">{patient?.name ?? "Paciente"}</p>
+                      <p className="font-medium text-ink truncate">{patient?.name ?? appt.patientName ?? "Paciente"}</p>
                       <p className="text-ink-muted truncate">com {dentist?.name ?? "—"}</p>
                     </div>
                     <div className="text-right">

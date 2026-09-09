@@ -20,7 +20,14 @@ export type AppointmentType = "avaliacao" | "retorno" | "urgencia" | "procedimen
 
 export interface IAppointment {
   _id: Types.ObjectId;
-  patient: Types.ObjectId;
+  // Sem "required": dá pra marcar uma consulta só com o nome, antes do
+  // paciente ter cadastro completo (ex: ligou pedindo horário e a
+  // recepção não quer travar a marcação preenchendo cadastro na hora).
+  // Nesse caso "patientName" guarda o nome digitado; depois que alguém
+  // cadastra o paciente de verdade, a consulta pode ser reatribuída
+  // (reagendar → escolher o paciente) e passa a usar "patient" normalmente.
+  patient?: Types.ObjectId;
+  patientName?: string;
   dentist: Types.ObjectId;
   start: Date;
   end: Date;
@@ -35,7 +42,8 @@ export interface IAppointment {
 
 const AppointmentSchema = new Schema<IAppointment>(
   {
-    patient: { type: Schema.Types.ObjectId, ref: "Patient", required: true },
+    patient: { type: Schema.Types.ObjectId, ref: "Patient" },
+    patientName: { type: String, trim: true },
     dentist: { type: Schema.Types.ObjectId, ref: "User", required: true },
     start: { type: Date, required: true },
     end: { type: Date, required: true },

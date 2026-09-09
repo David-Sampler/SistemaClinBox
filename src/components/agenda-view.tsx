@@ -6,6 +6,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import { addDays, format, isSameDay, isToday, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -23,6 +24,9 @@ type Appointment = {
   type?: string;
   procedure?: string;
   patient?: { _id: string; name: string; phone?: string };
+  // Preenchido quando a consulta foi marcada só com o nome, sem
+  // paciente cadastrado ainda (ver PatientField mais abaixo).
+  patientName?: string;
   dentist?: { _id: string; name: string };
 };
 
@@ -244,7 +248,8 @@ export function AgendaView({
     const end = new Date(start.getTime() + durationMin * 60000);
 
     const payload = {
-      patient: form.get("patient"),
+      patient: form.get("patient") || undefined,
+      patientName: form.get("patientName") || undefined,
       dentist: form.get("dentist"),
       start: start.toISOString(),
       end: end.toISOString(),
@@ -305,6 +310,8 @@ export function AgendaView({
     const end = new Date(start.getTime() + durationMin * 60000);
 
     const payload = {
+      patient: form.get("patient") || undefined,
+      patientName: form.get("patientName") || undefined,
       dentist: form.get("dentist"),
       start: start.toISOString(),
       end: end.toISOString(),
@@ -584,16 +591,7 @@ export function AgendaView({
       {showForm && (
         <Modal onClose={() => setShowForm(false)} title="Novo agendamento">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Field label="Paciente">
-              <select name="patient" required className="input">
-                <option value="">Selecione...</option>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <PatientField patients={patients} />
             <Field label="Dentista">
               <select name="dentist" required defaultValue={formDentist || dentistFilter} className="input">
                 <option value="">Selecione...</option>
@@ -648,16 +646,34 @@ export function AgendaView({
       {selected && (
         <SidePanel onClose={() => setSelected(null)}>
           <p className="text-xs text-ink-faint uppercase tracking-wide mb-1">Consulta</p>
-          <div className="flex items-center gap-3 mb-4">
-            <PatientAvatar name={selected.patient?.name ?? "?"} size={40} />
+          <div className="flex items-center gap-3 mb-1">
+            <PatientAvatar name={selected.patient?.name ?? selected.patientName ?? "?"} size={40} />
             <h3 className="font-display text-xl font-semibold text-ink flex-1">
-              {selected.patient?.name ?? "Paciente"}
+              {selected.patient?.name ?? selected.patientName ?? "Paciente"}
             </h3>
             <WhatsAppLink phone={selected.patient?.phone} size={17} />
+          </div>
+          <div className="mb-4">
+            {!selected.patient && (
+              <p className="text-xs text-warning bg-warning-soft border border-warning/20 rounded-md px-2.5 py-1.5 flex items-center justify-between gap-2">
+                Paciente ainda não cadastrado
+                <Link
+                  href={`/pacientes/novo?nome=${encodeURIComponent(selected.patientName ?? "")}`}
+                  className="font-medium underline underline-offset-2 shrink-0"
+                >
+                  Cadastrar
+                </Link>
+              </p>
+            )}
           </div>
 
           {editingSchedule ? (
             <form onSubmit={handleEditSubmit} className="space-y-3 mb-6">
+              <PatientField
+                patients={patients}
+                defaultPatientId={selected.patient?._id}
+                defaultPatientName={selected.patientName}
+              />
               <Field label="Dentista">
                 <select name="dentist" required defaultValue={selected.dentist?._id ?? ""} className="input">
                   <option value="">Selecione...</option>
@@ -925,10 +941,10 @@ function AppointmentBlock({
             campo existir). */}
         {appt.type && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_DOT_COLORS[appt.type] ?? "bg-ink-faint"}`} />}
         {start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-        {!compact && ` · ${appt.patient?.name ?? "Paciente"}`}
+        {!compact && ` · ${appt.patient?.name ?? appt.patientName ?? "Paciente"}`}
       </p>
       {compact && (
-        <p className="text-[11px] leading-tight truncate">{appt.patient?.name ?? "Paciente"}</p>
+        <p className="text-[11px] leading-tight truncate">{appt.patient?.name ?? appt.patientName ?? "Paciente"}</p>
       )}
       {/* Antes só aparecia na visão "Dia" (!compact) — a visão "Semana"
           também tem altura de sobra quando a consulta dura bastante, então
@@ -945,6 +961,53 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="block text-xs font-medium text-ink-muted mb-1">{label}</label>
       {children}
+    </div>
+  );
+}
+
+// Campo de paciente do formulário de agendar/reagendar: por padrão é um
+// select com os pacientes já cadastrados (fluxo normal), mas dá pra
+// marcar "ainda não cadastrado" e digitar só o nome — útil pra não travar
+// uma marcação por telefone esperando o cadastro completo ser feito. Uma
+// vez cadastrado de verdade, dá pra reatribuir no reagendar (escolhendo
+// o paciente no select) e essa consulta passa a contar no histórico dele.
+function PatientField({
+  patients,
+  defaultPatientId,
+  defaultPatientName,
+}: {
+  patients: { id: string; name: string }[];
+  defaultPatientId?: string;
+  defaultPatientName?: string;
+}) {
+  const [unregistered, setUnregistered] = useState(!defaultPatientId && !!defaultPatientName);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="block text-xs font-medium text-ink-muted">Paciente</label>
+        <label className="flex items-center gap-1.5 text-[11px] text-ink-muted cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={unregistered}
+            onChange={(e) => setUnregistered(e.target.checked)}
+            className="accent-blue"
+          />
+          Ainda não cadastrado
+        </label>
+      </div>
+      {unregistered ? (
+        <input name="patientName" defaultValue={defaultPatientName} placeholder="Nome do paciente" className="input" />
+      ) : (
+        <select name="patient" required defaultValue={defaultPatientId ?? ""} className="input">
+          <option value="">Selecione...</option>
+          {patients.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }

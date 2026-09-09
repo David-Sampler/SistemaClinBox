@@ -48,6 +48,14 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
+  // Paciente já cadastrado (id) OU pelo menos o nome — mas não pode
+  // faltar os dois, senão a consulta fica sem ninguém identificável.
+  if (!parsed.data.patient && !parsed.data.patientName) {
+    return NextResponse.json(
+      { error: "Informe o paciente cadastrado ou pelo menos o nome dele." },
+      { status: 400 }
+    );
+  }
 
   await connectDB();
 

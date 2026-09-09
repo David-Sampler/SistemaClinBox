@@ -1,15 +1,29 @@
 // Formulário de CADASTRO de um novo paciente.
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatCPF } from "@/lib/cpf";
 import { formatPhone } from "@/lib/phone";
 
 type FieldErrors = Record<string, string[]>;
 
+// useSearchParams precisa estar dentro de um <Suspense> (exigência do
+// Next.js) — por isso o formulário fica num componente separado.
 export default function NewPatientPage() {
+  return (
+    <Suspense>
+      <NewPatientForm />
+    </Suspense>
+  );
+}
+
+function NewPatientForm() {
   const router = useRouter();
+  // Vem preenchido quando o cadastro foi aberto a partir de uma consulta
+  // marcada só com o nome (agenda → "Cadastrar", ver src/components/agenda-view.tsx)
+  // — poupa a recepção de digitar o nome de novo.
+  const prefilledName = useSearchParams().get("nome") ?? "";
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
@@ -91,6 +105,7 @@ export default function NewPatientPage() {
               label="Nome completo"
               name="name"
               required
+              defaultValue={prefilledName}
               className="sm:col-span-2 lg:col-span-3 xl:col-span-4"
               error={fieldErrors.name}
             />
@@ -190,6 +205,7 @@ function Field({
   className = "",
   value,
   onChange,
+  defaultValue,
   error,
 }: {
   label: string;
@@ -201,6 +217,7 @@ function Field({
   className?: string;
   value?: string;
   onChange?: (value: string) => void;
+  defaultValue?: string;
   error?: string[];
 }) {
   const controlled = value !== undefined && onChange !== undefined;
@@ -213,6 +230,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         max={max}
+        defaultValue={!controlled ? defaultValue : undefined}
         className={`input ${error?.length ? "border-danger focus:ring-danger/30" : ""}`}
         {...(controlled ? { value, onChange: (e) => onChange(e.target.value) } : {})}
       />
