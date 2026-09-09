@@ -202,6 +202,14 @@ export const userUpdateSchema = z.object({
 
 // "Esqueci minha senha": pedir o link (só o e-mail) e depois usar o
 // link (e-mail + código que veio nele + a senha nova escolhida).
+// Só permite renomear o arquivo/mudar a categoria de um anexo já
+// enviado (radiografia, foto, etc.) — o arquivo em si (Vercel Blob)
+// não muda, só os metadados.
+export const attachmentUpdateSchema = z.object({
+  filename: z.string().trim().min(1, "Nome do arquivo obrigatório").optional(),
+  category: z.enum(["radiografia", "foto", "documento", "outro"]).optional(),
+});
+
 export const forgotPasswordSchema = z.object({
   email: z.string().email("E-mail inválido"),
 });

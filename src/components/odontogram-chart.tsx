@@ -43,7 +43,7 @@ const STATUS_OPTIONS: {
 }[] = [
   { value: "sadio", label: "Sadio", tooth: "fill-surface stroke-line-soft", chip: "bg-surface border-line text-ink-muted" },
   { value: "cariado", label: "Cariado", tooth: "fill-danger-soft stroke-danger", chip: "bg-danger-soft border-danger/40 text-danger" },
-  { value: "restaurado", label: "Restaurado", tooth: "fill-blue-soft stroke-blue", chip: "bg-blue-soft border-blue/40 text-blue-strong" },
+  { value: "restaurado", label: "Restauração", tooth: "fill-blue-soft stroke-blue", chip: "bg-blue-soft border-blue/40 text-blue-strong" },
   { value: "ausente", label: "Ausente", tooth: "fill-neutral-soft stroke-line", chip: "bg-neutral-soft border-line text-ink-faint" },
   { value: "extracao_indicada", label: "Extração indicada", tooth: "fill-warning-soft stroke-warning", chip: "bg-warning-soft border-warning/40 text-warning" },
   { value: "tratamento_endodontico", label: "Tratamento endodôntico", tooth: "fill-tooth-plum-soft stroke-tooth-plum", chip: "bg-tooth-plum-soft border-tooth-plum/40 text-tooth-plum" },

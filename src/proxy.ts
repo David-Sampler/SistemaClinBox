@@ -17,8 +17,12 @@ const PUBLIC_PATHS = ["/login", "/esqueci-senha", "/redefinir-senha"];
 export default auth((req) => {
   const isPublic = PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path));
   const isApiAuth = req.nextUrl.pathname.startsWith("/api/auth");
+  // Webhook do WhatsApp: quem chama é o Meta, não um usuário logado no
+  // ClinBox — a segurança dele vem da verificação de token/assinatura
+  // feita dentro da própria rota (src/app/api/whatsapp/webhook/route.ts).
+  const isWhatsAppWebhook = req.nextUrl.pathname.startsWith("/api/whatsapp/webhook");
 
-  if (isPublic || isApiAuth) return NextResponse.next();
+  if (isPublic || isApiAuth || isWhatsAppWebhook) return NextResponse.next();
 
   // Se não há sessão (usuário não logado), manda para o login,
   // guardando a página que ele tentou acessar para voltar depois do login.

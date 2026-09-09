@@ -5,6 +5,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { FileText, Trash2, Upload } from "lucide-react";
+import { XRayViewerModal } from "./xray-viewer-modal";
 
 type Attachment = {
   _id: string;
@@ -34,6 +35,7 @@ export function PatientDocuments({ patientId }: { patientId: string }) {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<Attachment | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -132,31 +134,34 @@ export function PatientDocuments({ patientId }: { patientId: string }) {
               className="fade-up group relative border border-line rounded-lg overflow-hidden bg-surface"
               style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
             >
-              <a
-                href={`/api/attachments/${a._id}/file`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <div className="aspect-square bg-surface-soft flex items-center justify-center overflow-hidden">
-                  {a.mimeType.startsWith("image/") ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={`/api/attachments/${a._id}/file`}
-                      alt={a.filename}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
+              {a.mimeType.startsWith("image/") ? (
+                // Imagem (radiografia, foto): abre no visualizador com
+                // ferramentas de ajuste, em vez de só abrir o arquivo cru.
+                <button type="button" onClick={() => setViewing(a)} className="block w-full text-left">
+                  <div className="aspect-square bg-surface-soft flex items-center justify-center overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/api/attachments/${a._id}/file`} alt={a.filename} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium text-ink truncate">{a.filename}</p>
+                    <p className="text-[11px] text-ink-faint">
+                      {categoryLabels[a.category]} · {formatSize(a.size)}
+                    </p>
+                  </div>
+                </button>
+              ) : (
+                <a href={`/api/attachments/${a._id}/file`} target="_blank" rel="noopener noreferrer" className="block">
+                  <div className="aspect-square bg-surface-soft flex items-center justify-center overflow-hidden">
                     <FileText size={32} className="text-ink-faint" />
-                  )}
-                </div>
-                <div className="p-2">
-                  <p className="text-xs font-medium text-ink truncate">{a.filename}</p>
-                  <p className="text-[11px] text-ink-faint">
-                    {categoryLabels[a.category]} · {formatSize(a.size)}
-                  </p>
-                </div>
-              </a>
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium text-ink truncate">{a.filename}</p>
+                    <p className="text-[11px] text-ink-faint">
+                      {categoryLabels[a.category]} · {formatSize(a.size)}
+                    </p>
+                  </div>
+                </a>
+              )}
               <button
                 onClick={() => handleDelete(a._id)}
                 className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-ink/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
@@ -167,6 +172,17 @@ export function PatientDocuments({ patientId }: { patientId: string }) {
             </div>
           ))}
         </div>
+      )}
+
+      {viewing && (
+        <XRayViewerModal
+          attachment={viewing}
+          onClose={() => setViewing(null)}
+          onRenamed={(filename) => {
+            setAttachments((prev) => prev.map((a) => (a._id === viewing._id ? { ...a, filename } : a)));
+            setViewing((prev) => (prev ? { ...prev, filename } : prev));
+          }}
+        />
       )}
     </div>
   );
