@@ -4,7 +4,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { FileText, Trash2, Upload } from "lucide-react";
+import { FileText, Images, Paperclip, ScanEye, Trash2, Upload } from "lucide-react";
 import { XRayViewerModal } from "./xray-viewer-modal";
 
 type Attachment = {
@@ -22,6 +22,17 @@ const categoryLabels: Record<Attachment["category"], string> = {
   foto: "Foto",
   documento: "Documento",
   outro: "Outro",
+};
+
+// Ordem fixa de exibição — cada categoria vira sua própria seção, em vez
+// de tudo (radiografia, foto, PDF...) misturado numa grade só, que
+// ficava difícil de achar o que precisava.
+const CATEGORY_ORDER: Attachment["category"][] = ["radiografia", "foto", "documento", "outro"];
+const CATEGORY_ICONS: Record<Attachment["category"], React.ElementType> = {
+  radiografia: ScanEye,
+  foto: Images,
+  documento: FileText,
+  outro: Paperclip,
 };
 
 function formatSize(bytes: number) {
@@ -127,50 +138,63 @@ export function PatientDocuments({ patientId }: { patientId: string }) {
       ) : attachments.length === 0 ? (
         <p className="text-sm text-ink-muted py-4">Nenhum documento enviado ainda.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {attachments.map((a, i) => (
-            <div
-              key={a._id}
-              className="fade-up group relative border border-line rounded-lg overflow-hidden bg-surface"
-              style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
-            >
-              {a.mimeType.startsWith("image/") ? (
-                // Imagem (radiografia, foto): abre no visualizador com
-                // ferramentas de ajuste, em vez de só abrir o arquivo cru.
-                <button type="button" onClick={() => setViewing(a)} className="block w-full text-left">
-                  <div className="aspect-square bg-surface-soft flex items-center justify-center overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/api/attachments/${a._id}/file`} alt={a.filename} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-medium text-ink truncate">{a.filename}</p>
-                    <p className="text-[11px] text-ink-faint">
-                      {categoryLabels[a.category]} · {formatSize(a.size)}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <a href={`/api/attachments/${a._id}/file`} target="_blank" rel="noopener noreferrer" className="block">
-                  <div className="aspect-square bg-surface-soft flex items-center justify-center overflow-hidden">
-                    <FileText size={32} className="text-ink-faint" />
-                  </div>
-                  <div className="p-2">
-                    <p className="text-xs font-medium text-ink truncate">{a.filename}</p>
-                    <p className="text-[11px] text-ink-faint">
-                      {categoryLabels[a.category]} · {formatSize(a.size)}
-                    </p>
-                  </div>
-                </a>
-              )}
-              <button
-                onClick={() => handleDelete(a._id)}
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-ink/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                aria-label="Excluir anexo"
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          ))}
+        <div className="space-y-6">
+          {CATEGORY_ORDER.map((category) => {
+            const items = attachments.filter((a) => a.category === category);
+            if (items.length === 0) return null;
+            const Icon = CATEGORY_ICONS[category];
+
+            return (
+              <div key={category}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <Icon size={15} className="text-ink-faint" />
+                  <h3 className="text-sm font-medium text-ink">{categoryLabels[category]}</h3>
+                  <span className="text-xs text-ink-faint">({items.length})</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {items.map((a, i) => (
+                    <div
+                      key={a._id}
+                      className="fade-up group relative border border-line rounded-lg overflow-hidden bg-surface"
+                      style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
+                    >
+                      {a.mimeType.startsWith("image/") ? (
+                        // Imagem (radiografia, foto): abre no visualizador com
+                        // ferramentas de ajuste, em vez de só abrir o arquivo cru.
+                        <button type="button" onClick={() => setViewing(a)} className="block w-full text-left">
+                          <div className="aspect-square bg-surface-soft flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={`/api/attachments/${a._id}/file`} alt={a.filename} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="p-2">
+                            <p className="text-xs font-medium text-ink truncate">{a.filename}</p>
+                            <p className="text-[11px] text-ink-faint">{formatSize(a.size)}</p>
+                          </div>
+                        </button>
+                      ) : (
+                        <a href={`/api/attachments/${a._id}/file`} target="_blank" rel="noopener noreferrer" className="block">
+                          <div className="aspect-square bg-surface-soft flex items-center justify-center overflow-hidden">
+                            <FileText size={32} className="text-ink-faint" />
+                          </div>
+                          <div className="p-2">
+                            <p className="text-xs font-medium text-ink truncate">{a.filename}</p>
+                            <p className="text-[11px] text-ink-faint">{formatSize(a.size)}</p>
+                          </div>
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleDelete(a._id)}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-ink/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                        aria-label="Excluir anexo"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

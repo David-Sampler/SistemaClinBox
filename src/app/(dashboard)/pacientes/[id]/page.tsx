@@ -35,6 +35,7 @@ import { Patient } from "@/models/Patient";
 import { User } from "@/models/User";
 import { Appointment } from "@/models/Appointment";
 import { Payment } from "@/models/Payment";
+import { ClinicalRecord } from "@/models/ClinicalRecord";
 import { PatientTabs } from "@/components/patient-tabs";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
@@ -86,7 +87,7 @@ export default async function PatientDetailPage({ params }: Props) {
   const now = new Date();
   const objectId = Types.ObjectId.isValid(id) ? new Types.ObjectId(id) : null;
 
-  const [patient, dentists, nextAppointment, lastAppointment, paymentsByStatus] = await Promise.all([
+  const [patient, dentists, nextAppointment, lastAppointment, lastClinicalRecord, paymentsByStatus] = await Promise.all([
     Patient.findById(id).lean(),
     User.find({ role: "dentist", active: true }).select("name").lean(),
     Appointment.findOne({ patient: id, start: { $gte: now }, status: { $nin: ["cancelado"] } })
@@ -97,6 +98,10 @@ export default async function PatientDetailPage({ params }: Props) {
       .sort({ start: -1 })
       .populate("dentist", "name")
       .lean(),
+    // "Última visita" também precisa enxergar registros lançados direto
+    // no prontuário (Novo registro), não só consulta marcada na agenda —
+    // senão um atendimento sem agendamento prévio nunca atualiza o card.
+    ClinicalRecord.findOne({ patient: id }).sort({ date: -1 }).populate("dentist", "name").lean(),
     objectId
       ? Payment.aggregate([
           { $match: { patient: objectId } },
@@ -106,6 +111,24 @@ export default async function PatientDetailPage({ params }: Props) {
   ]);
 
   if (!patient) notFound();
+
+  // Entre o último agendamento passado e o último registro de prontuário,
+  // vale o mais recente dos dois — cobre tanto quem sempre agenda pelo
+  // sistema quanto quem às vezes só lança o atendimento direto no prontuário.
+  const lastVisitDate = [
+    lastAppointment ? new Date(lastAppointment.start) : null,
+    lastClinicalRecord ? new Date(lastClinicalRecord.date) : null,
+  ]
+    .filter((d): d is Date => d !== null)
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+  const lastVisitFromRecord = !!(
+    lastVisitDate &&
+    lastClinicalRecord &&
+    (!lastAppointment || lastVisitDate.getTime() === new Date(lastClinicalRecord.date).getTime())
+  );
+  const lastVisitDentistName = lastVisitFromRecord
+    ? ((lastClinicalRecord?.dentist as any)?.name as string | undefined)
+    : ((lastAppointment?.dentist as any)?.name as string | undefined);
 
   const age = patient.birthDate ? calculateAge(new Date(patient.birthDate)) : null;
 
@@ -134,8 +157,6 @@ export default async function PatientDetailPage({ params }: Props) {
   const addressLine = formatAddress(patient.address);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nextDentistName = (nextAppointment?.dentist as any)?.name as string | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lastDentistName = (lastAppointment?.dentist as any)?.name as string | undefined;
 
   // O "#patient-tabs" no final faz o navegador rolar até as abas — sem
   // isso, clicar em "Editar dados" trocava a aba certinho por baixo dos
@@ -291,12 +312,8 @@ export default async function PatientDetailPage({ params }: Props) {
         <StatCard
           icon={History}
           label="Última visita"
-          value={
-            lastAppointment
-              ? new Date(lastAppointment.start).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
-              : "—"
-          }
-          detail={lastAppointment ? lastDentistName ?? "—" : "Sem histórico"}
+          value={lastVisitDate ? lastVisitDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—"}
+          detail={lastVisitDate ? lastVisitDentistName ?? "—" : "Sem histórico"}
         />
         <StatCard
           icon={Wallet}
