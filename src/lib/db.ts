@@ -24,6 +24,7 @@ import "@/models/Appointment";
 import "@/models/Attachment";
 import "@/models/Budget";
 import "@/models/ClinicDocument";
+import "@/models/ClinicSettings";
 import "@/models/ClinicalRecord";
 import "@/models/Odontogram";
 import "@/models/Payment";

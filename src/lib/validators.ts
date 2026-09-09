@@ -204,6 +204,12 @@ export const userUpdateSchema = z.object({
   active: z.boolean().optional(),
 });
 
+// Nome da clínica exibido no papel timbrado dos documentos impressos —
+// a logo em si vai por upload separado (multipart), não por aqui.
+export const clinicSettingsSchema = z.object({
+  name: z.string().trim().min(1, "Nome da clínica obrigatório"),
+});
+
 // "Esqueci minha senha": pedir o link (só o e-mail) e depois usar o
 // link (e-mail + código que veio nele + a senha nova escolhida).
 // Só permite renomear o arquivo/mudar a categoria de um anexo já

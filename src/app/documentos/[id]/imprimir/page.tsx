@@ -12,7 +12,9 @@ import { notFound } from "next/navigation";
 import { CalendarCheck, ClipboardCheck, FileSearch, Pill } from "lucide-react";
 import { connectDB } from "@/lib/db";
 import { ClinicDocument, IPrescriptionItem } from "@/models/ClinicDocument";
+import { getClinicBranding } from "@/lib/clinic-branding";
 import { PrintButton } from "@/components/print-button";
+import { ClinicLetterhead } from "@/components/clinic-letterhead";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -35,6 +37,8 @@ const TYPE_ACCENT: Record<string, { badge: string; icon: React.ElementType }> = 
 export default async function PrintDocumentPage({ params }: Props) {
   const { id } = await params;
   await connectDB();
+
+  const branding = await getClinicBranding();
 
   const doc = await ClinicDocument.findById(id)
     .populate("patient", "name cpf")
@@ -62,18 +66,7 @@ export default async function PrintDocumentPage({ params }: Props) {
 
         <div className="p-10 sm:p-14 print:p-[18mm] print:pt-[10mm]">
           {/* Cabeçalho: logo + nome da clínica */}
-          <div className="flex items-center gap-3 pb-4 mb-5 border-b border-line">
-            <span
-              className="w-11 h-11 rounded-xl text-white flex items-center justify-center font-display font-semibold text-lg shrink-0"
-              style={{ background: "linear-gradient(155deg, #1f6fb0, #00203f)" }}
-            >
-              C
-            </span>
-            <div>
-              <p className="font-display text-xl font-semibold leading-tight">ClinBox</p>
-              <p className="text-xs text-ink-muted">Clínica Odontológica</p>
-            </div>
-          </div>
+          <ClinicLetterhead name={branding.name} logoDataUri={branding.logoDataUri} />
 
           {/* Selo do tipo de documento + título */}
           <div className="flex flex-col items-center text-center gap-2.5 mb-6">

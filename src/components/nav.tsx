@@ -10,7 +10,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Users, CalendarDays, Wallet, ShoppingCart, Stethoscope, UserCog, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Wallet, ShoppingCart, Stethoscope, UserCog, Settings, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const links = [
@@ -21,6 +21,7 @@ const links = [
   { href: "/vendas", label: "Vendas", icon: ShoppingCart },
   { href: "/servicos", label: "Serviços", icon: Stethoscope },
   { href: "/equipe", label: "Equipe", icon: UserCog },
+  { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 // userId/userRole não são mais usados aqui (o avatar da barra lateral

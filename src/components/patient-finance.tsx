@@ -3,7 +3,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Printer, Trash2 } from "lucide-react";
 import { Modal } from "@/components/modal";
 
 type BudgetItem = { description: string; tooth?: string; value: number };
@@ -271,6 +271,16 @@ export function PatientFinance({
                   <p className="font-medium text-ink">{currency(b.total)}</p>
                   <div className="flex items-center gap-1 shrink-0">
                     <BudgetStatusSelect status={b.status} onChange={(s) => handleBudgetStatus(b._id, s)} />
+                    <a
+                      href={`/orcamentos/${b._id}/imprimir`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"
+                      aria-label="Imprimir ou baixar PDF do orçamento"
+                      title="Imprimir / baixar PDF"
+                    >
+                      <Printer size={14} />
+                    </a>
                     <button
                       onClick={() => setEditingBudget(b)}
                       className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"

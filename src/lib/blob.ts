@@ -38,3 +38,24 @@ export async function readBlob(url: string) {
 export async function deleteBlob(url: string) {
   await del(url).catch(() => {});
 }
+
+// Lê um arquivo inteiro pra um Buffer (em vez do stream que readBlob
+// devolve) — usado quando precisamos EMBUTIR o arquivo direto no HTML
+// (ex: a logo da clínica como base64 numa página de impressão), e não
+// só repassar os bytes numa resposta de API.
+export async function readBlobBuffer(url: string) {
+  const result = await readBlob(url);
+  if (!result) return null;
+
+  if (!result.stream) return null;
+
+  const chunks: Uint8Array[] = [];
+  const reader = result.stream.getReader();
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
