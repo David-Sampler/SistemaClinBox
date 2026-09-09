@@ -3,7 +3,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Pencil, Plus, Printer, Trash2 } from "lucide-react";
+import { CreditCard, FileSpreadsheet, Pencil, Plus, Printer, Trash2, X } from "lucide-react";
 import { Modal } from "@/components/modal";
 
 type BudgetItem = { description: string; tooth?: string; value: number };
@@ -36,6 +36,75 @@ function itemsSummary(items: BudgetItem[]) {
 }
 
 const currency = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// Editor de itens do orçamento — compartilhado entre o formulário de
+// "novo orçamento" e o modal de edição, pra não duplicar essa lista de
+// campos (descrição + dente + valor) em dois lugares diferentes.
+function BudgetItemsEditor({ items, onChange }: { items: BudgetItem[]; onChange: (items: BudgetItem[]) => void }) {
+  return (
+    <div className="space-y-2">
+      <div className="hidden sm:grid grid-cols-[1fr_88px_128px_28px] gap-2 px-0.5">
+        <label className="text-xs font-medium text-ink-muted">Procedimento</label>
+        <label className="text-xs font-medium text-ink-muted">Dente</label>
+        <label className="text-xs font-medium text-ink-muted">Valor</label>
+        <span />
+      </div>
+      {items.map((item, idx) => (
+        <div key={idx} className="grid grid-cols-[1fr_88px_1fr_28px] sm:grid-cols-[1fr_88px_128px_28px] gap-2">
+          <input
+            placeholder="Ex: Canal"
+            value={item.description}
+            onChange={(e) => {
+              const next = [...items];
+              next[idx] = { ...next[idx], description: e.target.value };
+              onChange(next);
+            }}
+            className="input"
+          />
+          <input
+            placeholder="26"
+            value={item.tooth ?? ""}
+            onChange={(e) => {
+              const next = [...items];
+              next[idx] = { ...next[idx], tooth: e.target.value };
+              onChange(next);
+            }}
+            className="input"
+          />
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            placeholder="Valor"
+            value={item.value || ""}
+            onChange={(e) => {
+              const next = [...items];
+              next[idx] = { ...next[idx], value: Number(e.target.value) };
+              onChange(next);
+            }}
+            className="input tabular"
+          />
+          <button
+            type="button"
+            onClick={() => onChange(items.filter((_, i) => i !== idx))}
+            disabled={items.length === 1}
+            className="w-7 h-9 flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger disabled:opacity-30 transition-colors"
+            aria-label="Remover item"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...items, { description: "", value: 0 }])}
+        className="flex items-center gap-1 text-sm text-blue hover:underline"
+      >
+        <Plus size={14} /> Adicionar item
+      </button>
+    </div>
+  );
+}
 
 const methodLabels: Record<string, string> = {
   dinheiro: "Dinheiro",
@@ -180,18 +249,22 @@ export function PatientFinance({
       {/* ORÇAMENTOS */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-ink">Orçamentos</h3>
+          <h3 className="flex items-center gap-2 font-semibold text-ink">
+            <FileSpreadsheet size={17} className="text-ink-faint" />
+            Orçamentos
+          </h3>
           <button
             onClick={() => setShowBudgetForm((v) => !v)}
             className="flex items-center gap-1 text-sm text-blue hover:underline"
           >
-            <Plus size={14} /> Novo orçamento
+            {showBudgetForm ? <X size={14} /> : <Plus size={14} />}
+            {showBudgetForm ? "Cancelar" : "Novo orçamento"}
           </button>
         </div>
 
         {showBudgetForm && (
-          <form onSubmit={handleBudgetSubmit} className="bg-surface-soft border border-line rounded-lg p-4 space-y-3">
-            <div>
+          <form onSubmit={handleBudgetSubmit} className="bg-surface-soft border border-line rounded-xl p-5 sm:p-6 space-y-5">
+            <div className="max-w-sm">
               <label className="block text-xs font-medium text-ink-muted mb-1">Dentista responsável</label>
               <select name="dentist" required className="input">
                 <option value="">Selecione...</option>
@@ -203,72 +276,35 @@ export function PatientFinance({
               </select>
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-xs font-medium text-ink-muted">Itens do orçamento</label>
-              {items.map((item, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <input
-                    placeholder="Descrição (ex: Canal - dente 26)"
-                    value={item.description}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], description: e.target.value };
-                      setItems(next);
-                    }}
-                    className="flex-1 input"
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    placeholder="Valor"
-                    value={item.value || ""}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], value: Number(e.target.value) };
-                      setItems(next);
-                    }}
-                    className="w-32 rounded-lg border border-line px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setItems(items.filter((_, i) => i !== idx))}
-                    className="text-ink-faint hover:text-danger"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setItems([...items, { description: "", value: 0 }])}
-                className="text-xs text-blue hover:underline"
-              >
-                + adicionar item
-              </button>
+            <BudgetItemsEditor items={items} onChange={setItems} />
+
+            <div>
+              <label className="block text-xs font-medium text-ink-muted mb-1">Observações (opcional)</label>
+              <input name="notes" className="input" placeholder="Ex: tratamento em duas sessões, orçamento válido por 30 dias" />
             </div>
 
-            <p className="text-sm font-medium text-ink">
-              Total: {currency(items.reduce((s, i) => s + (i.value || 0), 0))}
-            </p>
-
-            <button
-              type="submit"
-              className="btn-primary"
-            >
-              Salvar orçamento
-            </button>
+            <div className="flex items-center justify-between border-t border-line pt-4">
+              <p className="text-ink-muted">
+                Total{" "}
+                <span className="font-display text-xl font-semibold text-ink tabular ml-1.5">
+                  {currency(items.reduce((s, i) => s + (i.value || 0), 0))}
+                </span>
+              </p>
+              <button type="submit" className="btn-primary">
+                Salvar orçamento
+              </button>
+            </div>
           </form>
         )}
 
         {budgets.length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhum orçamento cadastrado.</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {budgets.map((b) => (
-              <li key={b._id} className="border border-line rounded-lg p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium text-ink">{currency(b.total)}</p>
+              <li key={b._id} className="border border-line rounded-xl p-5 bg-surface">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <p className="font-display text-lg font-semibold text-ink tabular">{currency(b.total)}</p>
                   <div className="flex items-center gap-1 shrink-0">
                     <BudgetStatusSelect status={b.status} onChange={(s) => handleBudgetStatus(b._id, s)} />
                     <a
@@ -297,13 +333,22 @@ export function PatientFinance({
                     </button>
                   </div>
                 </div>
-                <ul className="text-sm text-ink-muted mt-2 space-y-0.5">
+                <ul className="text-sm divide-y divide-line-soft border-t border-line-soft">
                   {b.items.map((i, idx) => (
-                    <li key={idx}>
-                      {i.description} {i.tooth ? `(dente ${i.tooth})` : ""} — {currency(i.value)}
+                    <li key={idx} className="flex items-center justify-between py-1.5">
+                      <span className="text-ink-muted">
+                        {i.description}
+                        {i.tooth && (
+                          <span className="ml-1.5 text-[11px] font-medium px-1.5 py-0.5 rounded bg-blue-soft text-blue-strong">
+                            dente {i.tooth}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-ink-faint tabular shrink-0 pl-3">{currency(i.value)}</span>
                     </li>
                   ))}
                 </ul>
+                {b.notes && <p className="text-sm text-ink-muted mt-3 pt-3 border-t border-line-soft">{b.notes}</p>}
               </li>
             ))}
           </ul>
@@ -313,17 +358,21 @@ export function PatientFinance({
       {/* PAGAMENTOS */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-ink">Pagamentos</h3>
+          <h3 className="flex items-center gap-2 font-semibold text-ink">
+            <CreditCard size={17} className="text-ink-faint" />
+            Pagamentos
+          </h3>
           <button
             onClick={() => setShowPaymentForm((v) => !v)}
             className="flex items-center gap-1 text-sm text-blue hover:underline"
           >
-            <Plus size={14} /> Novo pagamento
+            {showPaymentForm ? <X size={14} /> : <Plus size={14} />}
+            {showPaymentForm ? "Cancelar" : "Novo pagamento"}
           </button>
         </div>
 
         {showPaymentForm && (
-          <form onSubmit={handlePaymentSubmit} className="bg-surface-soft border border-line rounded-lg p-4 space-y-3">
+          <form onSubmit={handlePaymentSubmit} className="bg-surface-soft border border-line rounded-xl p-5 sm:p-6 space-y-4">
             <div>
               <label className="block text-xs font-medium text-ink-muted mb-1">Orçamento vinculado</label>
               <select name="budget" className="input" defaultValue="">
@@ -380,12 +429,12 @@ export function PatientFinance({
         {payments.length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhum pagamento cadastrado.</p>
         ) : (
-          <ul className="divide-y divide-line-soft border border-line rounded-lg">
+          <ul className="divide-y divide-line-soft border border-line rounded-xl overflow-hidden bg-surface">
             {payments.map((p) => {
               const budgetRef = typeof p.budget === "object" ? p.budget : undefined;
               const serviceLabel = budgetRef ? itemsSummary(budgetRef.items) : p.notes;
               return (
-              <li key={p._id} className="flex items-center justify-between px-4 py-3 text-sm gap-3">
+              <li key={p._id} className="flex items-center justify-between px-5 py-4 text-sm gap-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-ink">{currency(p.amount)}</p>
@@ -534,9 +583,9 @@ function EditBudgetModal({
   }
 
   return (
-    <Modal title="Editar orçamento" onClose={onClose}>
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
+    <Modal title="Editar orçamento" onClose={onClose} wide>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="max-w-sm">
           <label className="block text-xs font-medium text-ink-muted mb-1">Dentista responsável</label>
           <select name="dentist" required defaultValue={budget.dentist} className="input">
             {dentists.map((d) => (
@@ -547,65 +596,26 @@ function EditBudgetModal({
           </select>
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-xs font-medium text-ink-muted">Itens do orçamento</label>
-          {items.map((item, idx) => (
-            <div key={idx} className="flex gap-2">
-              <input
-                placeholder="Descrição (ex: Canal - dente 26)"
-                value={item.description}
-                onChange={(e) => {
-                  const next = [...items];
-                  next[idx] = { ...next[idx], description: e.target.value };
-                  setItems(next);
-                }}
-                className="flex-1 input"
-              />
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                placeholder="Valor"
-                value={item.value || ""}
-                onChange={(e) => {
-                  const next = [...items];
-                  next[idx] = { ...next[idx], value: Number(e.target.value) };
-                  setItems(next);
-                }}
-                className="w-32 rounded-lg border border-line px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setItems(items.filter((_, i) => i !== idx))}
-                className="text-ink-faint hover:text-danger"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setItems([...items, { description: "", value: 0 }])}
-            className="text-xs text-blue hover:underline"
-          >
-            + adicionar item
-          </button>
-        </div>
-
-        <p className="text-sm font-medium text-ink">
-          Total: {currency(items.reduce((s, i) => s + (i.value || 0), 0))}
-        </p>
+        <BudgetItemsEditor items={items} onChange={setItems} />
 
         <div>
           <label className="block text-xs font-medium text-ink-muted mb-1">Observações</label>
           <input name="notes" defaultValue={budget.notes} className="input" />
         </div>
 
-        {error && <p className="text-sm text-danger">{error}</p>}
+        <div className="flex items-center justify-between border-t border-line pt-4">
+          <p className="text-ink-muted">
+            Total{" "}
+            <span className="font-display text-xl font-semibold text-ink tabular ml-1.5">
+              {currency(items.reduce((s, i) => s + (i.value || 0), 0))}
+            </span>
+          </p>
+          <button type="submit" disabled={saving} className="btn-primary">
+            {saving ? "Salvando..." : "Salvar alterações"}
+          </button>
+        </div>
 
-        <button type="submit" disabled={saving} className="btn-primary w-full">
-          {saving ? "Salvando..." : "Salvar alterações"}
-        </button>
+        {error && <p className="text-sm text-danger">{error}</p>}
       </form>
     </Modal>
   );

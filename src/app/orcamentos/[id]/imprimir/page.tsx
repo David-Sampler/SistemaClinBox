@@ -9,7 +9,7 @@ import { connectDB } from "@/lib/db";
 import { Budget } from "@/models/Budget";
 import { getClinicBranding } from "@/lib/clinic-branding";
 import { PrintButton } from "@/components/print-button";
-import { ClinicLetterhead } from "@/components/clinic-letterhead";
+import { ClinicLetterhead, ClinicWatermark } from "@/components/clinic-letterhead";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -49,7 +49,10 @@ export default async function PrintBudgetPage({ params }: Props) {
       <div className="print-doc relative w-full max-w-[210mm] bg-white shadow-lg print:shadow-none rounded-lg print:rounded-none text-ink overflow-hidden">
         <div className="h-2.5 bg-gradient-to-r from-[#1f6fb0] to-[#00203f] print:h-2" />
 
-        <div className="p-10 sm:p-14 print:p-[18mm] print:pt-[10mm]">
+        <div className="p-10 sm:p-14 print:p-[18mm] print:pt-[10mm] relative">
+          <ClinicWatermark logoDataUri={branding.logoDataUri} />
+
+          <div className="relative z-10">
           <ClinicLetterhead name={branding.name} logoDataUri={branding.logoDataUri} />
 
           {/* Selo de status + título */}
@@ -116,6 +119,7 @@ export default async function PrintBudgetPage({ params }: Props) {
               <p className="font-medium">{dentist?.name ?? "—"}</p>
               {dentist?.cro && <p className="text-sm text-ink-muted">CRO {dentist.cro}</p>}
             </div>
+          </div>
           </div>
         </div>
 

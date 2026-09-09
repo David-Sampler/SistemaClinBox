@@ -9,6 +9,14 @@
    ============================================================ */
 
 :root {
+  /* Sem isso, controles NATIVOS do navegador (select, checkbox,
+     scrollbar) seguem o modo claro/escuro do SISTEMA OPERACIONAL,
+     independente do tema escolhido aqui dentro — dava pra ficar com o
+     app inteiro no tema claro e mesmo assim o menuzinho de um <select>
+     abrir com fundo escuro (Mac/Windows no modo escuro), parecendo
+     quebrado. Isso também se repete nos blocos de tema escuro mais abaixo. */
+  color-scheme: light;
+
   /* Superfícies — cinza neutro bem suave, com o mínimo de tinta
      azulada: fica leve numa tela de trabalho o dia inteiro. */
   --porcelain: #f6f8fb;      /* fundo da página */
@@ -223,6 +231,7 @@
      barra mudava de tema. Agora, quando uma dessas está escolhida, ela
      vale mesmo se o sistema operacional estiver no modo escuro. */
   :root:not([data-theme="light"]):not([data-palette="clinic"]):not([data-palette="green"]) {
+    color-scheme: dark;
     --porcelain: #0c131d;
     --surface: #151f2c;
     --surface-soft: #1b2735;
@@ -261,6 +270,7 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --porcelain: #0c131d;
   --surface: #151f2c;
   --surface-soft: #1b2735;

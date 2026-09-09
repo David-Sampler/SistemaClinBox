@@ -14,7 +14,7 @@ import { connectDB } from "@/lib/db";
 import { ClinicDocument, IPrescriptionItem } from "@/models/ClinicDocument";
 import { getClinicBranding } from "@/lib/clinic-branding";
 import { PrintButton } from "@/components/print-button";
-import { ClinicLetterhead } from "@/components/clinic-letterhead";
+import { ClinicLetterhead, ClinicWatermark } from "@/components/clinic-letterhead";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -64,7 +64,10 @@ export default async function PrintDocumentPage({ params }: Props) {
         {/* Barra de marca — identidade fixa do papel, em qualquer tipo de documento */}
         <div className="h-2.5 bg-gradient-to-r from-[#1f6fb0] to-[#00203f] print:h-2" />
 
-        <div className="p-10 sm:p-14 print:p-[18mm] print:pt-[10mm]">
+        <div className="p-10 sm:p-14 print:p-[18mm] print:pt-[10mm] relative">
+          <ClinicWatermark logoDataUri={branding.logoDataUri} />
+
+          <div className="relative z-10">
           {/* Cabeçalho: logo + nome da clínica */}
           <ClinicLetterhead name={branding.name} logoDataUri={branding.logoDataUri} />
 
@@ -133,6 +136,7 @@ export default async function PrintDocumentPage({ params }: Props) {
               <p className="font-medium">{dentist?.name ?? "—"}</p>
               {dentist?.cro && <p className="text-sm text-ink-muted">CRO {dentist.cro}</p>}
             </div>
+          </div>
           </div>
         </div>
 
