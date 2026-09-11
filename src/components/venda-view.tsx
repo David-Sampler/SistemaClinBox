@@ -700,25 +700,34 @@ function SalesStats({ sales, loading }: { sales: RevenueEntry[]; loading: boolea
 
   const paid = sales.filter((s) => s.status === "pago");
   const pending = sales.filter((s) => s.status === "pendente");
-  // Vendas canceladas saem dos totais e da contagem — senão "ticket
-  // médio" ficava artificialmente mais baixo (dividindo pelo total de
-  // vendas incluindo as que foram estornadas e não somam nada).
+  // Cancelada sai dos totais e da contagem — senão "ticket médio" ficava
+  // artificialmente mais baixo (dividindo pelo total incluindo o que foi
+  // estornado e não soma nada).
   const active = sales.filter((s) => s.status !== "cancelada");
   const totalPaid = paid.reduce((sum, s) => sum + s.total, 0);
   const totalPending = pending.reduce((sum, s) => sum + s.total, 0);
   const ticket = active.length > 0 ? (totalPaid + totalPending) / active.length : 0;
 
+  // Rótulo neutro ("lançamento", não "venda") porque a lista mistura
+  // venda de balcão com cobrança de paciente desde que os dois passaram
+  // a aparecer juntos aqui — "3 vendas" ficava errado quando 2 delas
+  // eram, na real, cobranças.
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <StatCard label="Recebido" value={currency(totalPaid)} detail={`${paid.length} venda${paid.length !== 1 ? "s" : ""}`} tone="success" />
+      <StatCard
+        label="Recebido"
+        value={currency(totalPaid)}
+        detail={`${paid.length} lançamento${paid.length !== 1 ? "s" : ""}`}
+        tone="success"
+      />
       <StatCard
         label="A receber"
         value={currency(totalPending)}
-        detail={`${pending.length} venda${pending.length !== 1 ? "s" : ""}`}
+        detail={`${pending.length} lançamento${pending.length !== 1 ? "s" : ""}`}
         tone={pending.length > 0 ? "warning" : "default"}
       />
-      <StatCard label="Nº de vendas" value={String(active.length)} detail="no período" />
-      <StatCard label="Ticket médio" value={currency(ticket)} detail="por venda" />
+      <StatCard label="Nº de lançamentos" value={String(active.length)} detail="no período" />
+      <StatCard label="Ticket médio" value={currency(ticket)} detail="por lançamento" />
     </div>
   );
 }

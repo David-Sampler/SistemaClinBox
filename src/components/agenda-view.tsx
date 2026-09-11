@@ -115,9 +115,14 @@ function assignLanes(appts: Appointment[]) {
 export function AgendaView({
   dentists,
   patients,
+  autoOpenNew,
 }: {
   dentists: Dentist[];
   patients: { id: string; name: string }[];
+  // Abre o modal de "novo agendamento" já ao carregar — usado pelo atalho
+  // "Novo agendamento" do painel inicial (/agenda?novo=1), que antes só
+  // levava pra agenda e exigia mais um clique pra abrir o formulário.
+  autoOpenNew?: boolean;
 }) {
   const [view, setView] = useState<View>("day");
   const [date, setDate] = useState(todayISO());
@@ -205,6 +210,13 @@ export function AgendaView({
     setFormDentist(opts?.dentistId ?? "");
     setShowForm(true);
   }
+
+  // Veio de "/agenda?novo=1" (atalho "Novo agendamento" do painel
+  // inicial) — abre o formulário direto, sem exigir mais um clique.
+  useEffect(() => {
+    if (autoOpenNew) openNewAppointment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Clicar no nome de um dentista filtra a agenda só pra ele E já pula
   // direto pro dia da próxima consulta marcada dele (a partir de hoje)

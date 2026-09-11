@@ -12,7 +12,7 @@ import { Payment } from "@/models/Payment";
 import { getCombinedRevenue } from "@/lib/revenue";
 import {
   Users,
-  CalendarDays,
+  AlertTriangle,
   CalendarClock,
   Wallet,
   ArrowRight,
@@ -95,6 +95,7 @@ async function getDashboardData() {
     totalPatients,
     todayAppointments,
     tomorrowAppointments,
+    overdueCount,
     pendingPayments,
     receivedThisMonth,
     patientsWithBirthday,
@@ -118,6 +119,14 @@ async function getDashboardData() {
         .populate("dentist", "name")
         .sort({ start: 1 })
         .lean(),
+      // Qualquer consulta (não só as de hoje) que passou do horário e
+      // continua Agendada/Confirmada — mesmo critério de
+      // isAppointmentOverdue() em status-badge.tsx, refeito aqui como
+      // query porque precisa contar mesmo o que não é de hoje.
+      Appointment.countDocuments({
+        status: { $in: ["agendado", "confirmado"] },
+        end: { $lt: new Date() },
+      }),
       Payment.find({ status: { $in: ["pendente", "atrasado"] } }).lean(),
       Payment.aggregate([
         { $match: { status: "pago", paidDate: { $gte: startOfMonth } } },
@@ -125,10 +134,13 @@ async function getDashboardData() {
       ]),
       Patient.find({ active: true, birthDate: { $ne: null } }).select("name birthDate phone").lean(),
       getClinicSettings(),
-      // Últimas vendas/cobranças — junta venda de balcão (avulsa ou não)
-      // com cobrança lançada na ficha do paciente, que sem isso não
-      // aparecia em lugar nenhum do painel (ver src/lib/revenue.ts).
-      getCombinedRevenue({ limit: 6 }),
+      // Últimas vendas/cobranças deste mês — junta venda de balcão
+      // (avulsa ou não) com cobrança lançada na ficha do paciente, que
+      // sem isso não aparecia em lugar nenhum do painel (ver
+      // src/lib/revenue.ts). Filtrado por mês pra bater com "Recebido
+      // este mês" logo acima na mesma coluna, em vez de mostrar as N
+      // mais recentes de qualquer época.
+      getCombinedRevenue({ from: startOfMonth, limit: 6 }),
     ]);
 
   const pendingTotal = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -164,6 +176,7 @@ async function getDashboardData() {
     todayAppointments,
     tomorrowCount: tomorrowAppointments.length,
     tomorrowDentistsPhrase: dentistsPhrase(tomorrowDentists),
+    overdueCount,
     pendingCount: pendingPayments.length,
     pendingTotal,
     receivedTotal,
@@ -180,6 +193,7 @@ export default async function DashboardHome() {
     todayAppointments,
     tomorrowCount,
     tomorrowDentistsPhrase,
+    overdueCount,
     pendingCount,
     pendingTotal,
     receivedTotal,
@@ -254,18 +268,24 @@ export default async function DashboardHome() {
       {/* Atalhos para as ações mais comuns do dia a dia */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <QuickAction href="/pacientes/novo" icon={UserPlus} label="Novo paciente" />
-        <QuickAction href="/agenda" icon={CalendarPlus} label="Novo agendamento" />
+        <QuickAction href="/agenda?novo=1" icon={CalendarPlus} label="Novo agendamento" />
         <QuickAction href="/servicos" icon={Stethoscope} label="Catálogo de serviços" />
       </div>
 
-      {/* Cards com números resumidos */}
+      {/* Cards com números resumidos. "Consultas hoje" foi trocado por
+          "Consultas atrasadas": o número de hoje já aparece por inteiro
+          na lista "Consultas de hoje" logo abaixo, então repetia a mesma
+          informação sem somar nada — atrasada não tinha contador em
+          lugar nenhum do painel. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <SummaryCard icon={Users} label="Pacientes ativos" value={totalPatients} href="/pacientes" />
         <SummaryCard
-          icon={CalendarDays}
-          label="Consultas hoje"
-          value={todayAppointments.length}
+          icon={AlertTriangle}
+          label="Consultas atrasadas"
+          value={overdueCount}
+          detail={overdueCount > 0 ? "sem baixa" : undefined}
           href="/agenda"
+          tone={overdueCount > 0 ? "warning" : "blue"}
         />
         <SummaryCard
           icon={Wallet}
@@ -358,7 +378,7 @@ export default async function DashboardHome() {
             </div>
 
             {recentSales.length === 0 ? (
-              <p className="px-5 pt-1 pb-4 text-sm text-ink-muted">Nenhuma venda registrada ainda.</p>
+              <p className="px-5 pt-1 pb-4 text-sm text-ink-muted">Nenhuma venda neste mês ainda.</p>
             ) : (
               <ul className="pb-1">
                 {recentSales.map((s) => {
@@ -457,19 +477,24 @@ function SummaryCard({
   value,
   detail,
   href,
+  tone = "blue",
 }: {
   icon: React.ElementType;
   label: string;
   value: number;
   detail?: string;
   href: string;
+  // "warning" chama atenção quando o número é ruim de ver alto (ex:
+  // consultas atrasadas) — o padrão "blue" é neutro, sem julgamento.
+  tone?: "blue" | "warning";
 }) {
+  const iconTone = tone === "warning" ? "bg-warning-soft text-warning" : "bg-blue-soft text-blue";
   return (
     <Link
       href={href}
       className="card-hover fade-up bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-5 flex items-center gap-4 hover:border-blue/40"
     >
-      <div className="w-11 h-11 shrink-0 rounded-lg bg-blue-soft text-blue flex items-center justify-center">
+      <div className={`w-11 h-11 shrink-0 rounded-lg ${iconTone} flex items-center justify-center`}>
         <Icon size={22} />
       </div>
       <div>

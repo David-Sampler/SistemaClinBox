@@ -6,12 +6,19 @@ import { User } from "@/models/User";
 import { Patient } from "@/models/Patient";
 import { AgendaView } from "@/components/agenda-view";
 
-export default async function AgendaPage() {
+export default async function AgendaPage({
+  searchParams,
+}: {
+  // "?novo=1" abre o formulário de nova consulta já ao carregar — usado
+  // pelo atalho "Novo agendamento" do painel inicial.
+  searchParams: Promise<{ novo?: string }>;
+}) {
   await connectDB();
 
-  const [dentists, patients] = await Promise.all([
+  const [dentists, patients, { novo }] = await Promise.all([
     User.find({ role: "dentist", active: true }).select("name").sort({ name: 1 }).lean(),
     Patient.find({ active: true }).select("name phone").sort({ name: 1 }).lean(),
+    searchParams,
   ]);
 
   return (
@@ -24,6 +31,7 @@ export default async function AgendaPage() {
       <AgendaView
         dentists={dentists.map((d) => ({ id: String(d._id), name: d.name }))}
         patients={patients.map((p) => ({ id: String(p._id), name: p.name }))}
+        autoOpenNew={novo === "1"}
       />
     </div>
   );
