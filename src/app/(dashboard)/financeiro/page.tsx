@@ -7,7 +7,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Clock, FileWarning, Wallet } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { AlertTriangle, Clock, FileWarning, Trash2, Wallet } from "lucide-react";
 import { PatientAvatar } from "@/components/patient-avatar";
 
 type Payment = {
@@ -66,6 +67,12 @@ function itemsSummary(items: { description: string; tooth?: string }[]) {
 }
 
 export default function FinanceiroPage() {
+  // Excluir orçamento apaga de vez — só admin (mesma trava do backend,
+  // ver DELETE em src/app/api/budgets/[id]/route.ts). Útil aqui
+  // especialmente pra registro órfão (paciente/dentista que não existe
+  // mais), que não tem como ser excluído pela ficha do paciente porque
+  // essa ficha nem existe mais.
+  const isAdmin = useSession().data?.user?.role === "admin";
   const [tab, setTab] = useState<"pagamentos" | "orcamentos">("pagamentos");
   const [payments, setPayments] = useState<Payment[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -83,9 +90,26 @@ export default function FinanceiroPage() {
     const [pRes, bRes] = await Promise.all([fetch(paymentsUrl), fetch("/api/budgets")]);
     const pData = await pRes.json();
     const bData = await bRes.json();
-    setPayments(pData.payments ?? []);
-    setBudgets(bData.budgets ?? []);
+    // Descarta pagamento/orçamento cujo paciente não existe mais (o
+    // populate do back-end devolve "patient: null" nesse caso) — sem
+    // isso, o link virava "/pacientes/undefined" e caía numa página
+    // fora do ar. Normalmente não acontece (excluir paciente só
+    // desativa, nunca apaga — ver DELETE em /api/patients/[id]), mas
+    // dado antigo lançado direto no banco pode ficar órfão assim.
+    setPayments((pData.payments ?? []).filter((p: Payment) => p.patient));
+    setBudgets((bData.budgets ?? []).filter((b: Budget) => b.patient));
     setLoading(false);
+  }
+
+  async function handleDeleteBudget(id: string) {
+    if (!confirm("Excluir este orçamento? Essa ação não pode ser desfeita.")) return;
+    const res = await fetch(`/api/budgets/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(typeof data.error === "string" ? data.error : "Não foi possível excluir o orçamento.");
+      return;
+    }
+    setBudgets((prev) => prev.filter((b) => b._id !== id));
   }
 
   // "atrasado" é calculado aqui: pagamento pendente cujo vencimento já passou.
@@ -262,6 +286,16 @@ export default function FinanceiroPage() {
                       {budgetStatusLabels[b.status]}
                     </span>
                   </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDeleteBudget(b._id)}
+                      className="w-7 h-7 shrink-0 flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
+                      aria-label="Excluir orçamento (somente admin)"
+                      title="Excluir — somente admin"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
