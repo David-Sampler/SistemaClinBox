@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Payment } from "@/models/Payment";
 import { paymentSchema } from "@/lib/validators";
-import { requireSession } from "@/lib/api-auth";
+import { requireSession, requireRole } from "@/lib/api-auth";
 
 // Rota de UM pagamento específico: editar (PUT — usado tanto para marcar
 // como "pago" quanto para corrigir valor/data/forma de pagamento errados)
 // e excluir (DELETE — lançamento removido de vez, sem soft-delete: não
 // faz sentido manter na tela um pagamento que nunca deveria ter existido).
+// DELETE restrito a ADMIN — mesma lógica de orçamento/venda: apagar
+// lançamento financeiro de vez não fica liberado pra qualquer usuário.
 type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -37,8 +39,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const { error } = await requireSession();
+  const { session, error } = await requireSession();
   if (error) return error;
+  const forbidden = requireRole(session!.user.role, ["admin"]);
+  if (forbidden) return forbidden;
 
   const { id } = await params;
   await connectDB();

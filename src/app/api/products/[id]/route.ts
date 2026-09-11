@@ -1,10 +1,12 @@
 // Rota de API de UM produto específico: editar (PUT — inclui ajustar
-// estoque manualmente) e desativar (DELETE). Só admin/dentista.
+// estoque manualmente; governado pela permissão configurável "catalog")
+// e desativar (DELETE — restrito a ADMIN, sem exceção — ver o mesmo
+// comentário em src/app/api/services/[id]/route.ts).
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Product } from "@/models/Product";
 import { productSchema } from "@/lib/validators";
-import { requireSession } from "@/lib/api-auth";
+import { requireSession, requireRole } from "@/lib/api-auth";
 import { requirePermission } from "@/lib/permissions";
 
 type Params = { params: Promise<{ id: string }> };
@@ -32,7 +34,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { session, error } = await requireSession();
   if (error) return error;
-  const forbidden = await requirePermission(session!.user.role, "catalog");
+  const forbidden = requireRole(session!.user.role, ["admin"]);
   if (forbidden) return forbidden;
 
   const { id } = await params;

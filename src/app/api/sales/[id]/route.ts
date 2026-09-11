@@ -2,17 +2,21 @@
 // é apagada — fica no histórico marcada como "cancelada" (é um estorno,
 // não um "nunca existiu"), e se tinha produto, devolve a quantidade pro
 // estoque (senão o produto ficava "vendido" pra sempre mesmo sem ter saído).
+// Restrito a ADMIN: cancelar uma venda mexe em estoque e nos totais do
+// financeiro, então não fica liberado pra qualquer usuário logado.
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Sale } from "@/models/Sale";
 import { Product } from "@/models/Product";
-import { requireSession } from "@/lib/api-auth";
+import { requireSession, requireRole } from "@/lib/api-auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  const { error } = await requireSession();
+  const { session, error } = await requireSession();
   if (error) return error;
+  const forbidden = requireRole(session!.user.role, ["admin"]);
+  if (forbidden) return forbidden;
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));

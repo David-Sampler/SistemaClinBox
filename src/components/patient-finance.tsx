@@ -3,6 +3,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { CreditCard, FileSpreadsheet, Pencil, Plus, Printer, StickyNote, Trash2, X } from "lucide-react";
 import { Modal } from "@/components/modal";
 
@@ -122,6 +123,10 @@ export function PatientFinance({
   patientId: string;
   dentists: { id: string; name: string }[];
 }) {
+  // Excluir orçamento/pagamento apaga de vez (sem volta) — só admin, ver
+  // a mesma trava em src/app/api/budgets/[id]/route.ts e
+  // src/app/api/payments/[id]/route.ts.
+  const isAdmin = useSession().data?.user?.role === "admin";
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -363,13 +368,16 @@ export function PatientFinance({
                       >
                         <Pencil size={15} />
                       </button>
-                      <button
-                        onClick={() => handleDeleteBudget(b._id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
-                        aria-label="Excluir orçamento"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeleteBudget(b._id)}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
+                          aria-label="Excluir orçamento (somente admin)"
+                          title="Excluir — somente admin"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -526,13 +534,16 @@ export function PatientFinance({
                   >
                     <Pencil size={14} />
                   </button>
-                  <button
-                    onClick={() => handleDeletePayment(p._id)}
-                    className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
-                    aria-label="Excluir pagamento"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDeletePayment(p._id)}
+                      className="w-7 h-7 flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
+                      aria-label="Excluir pagamento (somente admin)"
+                      title="Excluir — somente admin"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               </li>
               );

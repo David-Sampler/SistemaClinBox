@@ -9,6 +9,7 @@ import { connectDB } from "@/lib/db";
 import { Patient } from "@/models/Patient";
 import { Appointment } from "@/models/Appointment";
 import { Payment } from "@/models/Payment";
+import { getCombinedRevenue } from "@/lib/revenue";
 import {
   Users,
   CalendarDays,
@@ -19,6 +20,7 @@ import {
   CalendarPlus,
   Stethoscope,
   Cake,
+  ShoppingBag,
 } from "lucide-react";
 import { brazilDayBounds, brazilHour, brazilMonthStart, brazilNow } from "@/lib/timezone";
 import { getClinicSettings } from "@/models/ClinicSettings";
@@ -97,6 +99,7 @@ async function getDashboardData() {
     receivedThisMonth,
     patientsWithBirthday,
     clinicSettings,
+    recentSales,
   ] =
     await Promise.all([
       Patient.countDocuments({ active: true }),
@@ -122,6 +125,10 @@ async function getDashboardData() {
       ]),
       Patient.find({ active: true, birthDate: { $ne: null } }).select("name birthDate phone").lean(),
       getClinicSettings(),
+      // Últimas vendas/cobranças — junta venda de balcão (avulsa ou não)
+      // com cobrança lançada na ficha do paciente, que sem isso não
+      // aparecia em lugar nenhum do painel (ver src/lib/revenue.ts).
+      getCombinedRevenue({ limit: 6 }),
     ]);
 
   const pendingTotal = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -143,7 +150,6 @@ async function getDashboardData() {
     .filter((p): p is { name: string; phone: string | undefined; daysAway: number } => p.daysAway !== null)
     .sort((a, b) => a.daysAway - b.daysAway);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tomorrowDentists = [
     ...new Set(
       tomorrowAppointments
@@ -163,6 +169,7 @@ async function getDashboardData() {
     receivedTotal,
     birthdaysThisWeek,
     clinicName,
+    recentSales,
   };
 }
 
@@ -178,6 +185,7 @@ export default async function DashboardHome() {
     receivedTotal,
     birthdaysThisWeek,
     clinicName,
+    recentSales,
   } = await getDashboardData();
 
   const userName = session?.user?.name ?? "Usuário";
@@ -319,13 +327,57 @@ export default async function DashboardHome() {
           )}
         </div>
 
-        {/* Coluna lateral: financeiro do mês + aniversariantes */}
+        {/* Coluna lateral: financeiro do mês (+ últimas vendas logo
+            embaixo, no mesmo card) e aniversariantes */}
         <div className="space-y-4">
-          <div className="fade-up bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-5">
-            <p className="text-ink-faint text-xs uppercase tracking-wide">Recebido este mês</p>
-            <p className="font-display text-2xl font-semibold text-success tabular mt-1">
-              {currency(receivedTotal)}
-            </p>
+          {/* Recebido este mês + últimas vendas, um do lado do outro no
+              mesmo card — junta venda de balcão (Sale) e cobrança lançada
+              na ficha do paciente (Payment). Ver src/lib/revenue.ts. Lista
+              propositalmente discreta (sem avatar, sem selo cheio — só a
+              cor do valor indica o status), já que mora numa coluna
+              estreita ao lado de "Consultas de hoje". */}
+          <div className="fade-up bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
+            <div className="px-5 py-4 border-b border-line flex items-end justify-between">
+              <div>
+                <p className="text-ink-faint text-xs uppercase tracking-wide">Recebido este mês</p>
+                <p className="font-display text-2xl font-semibold text-success tabular mt-1">
+                  {currency(receivedTotal)}
+                </p>
+              </div>
+              <Link
+                href="/vendas"
+                className="mb-0.5 shrink-0 text-xs text-blue hover:text-blue-strong hover:underline flex items-center gap-1"
+              >
+                Vendas <ArrowRight size={12} />
+              </Link>
+            </div>
+
+            <div className="px-5 pt-3 pb-1 flex items-center gap-1.5">
+              <ShoppingBag size={12} className="text-ink-faint" />
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Últimas vendas</p>
+            </div>
+
+            {recentSales.length === 0 ? (
+              <p className="px-5 pt-1 pb-4 text-sm text-ink-muted">Nenhuma venda registrada ainda.</p>
+            ) : (
+              <ul className="pb-1">
+                {recentSales.map((s) => {
+                  const cancelled = s.status === "cancelada";
+                  const tone = cancelled ? "text-ink-faint" : s.status === "pago" ? "text-success" : "text-warning";
+                  return (
+                    <li key={`${s.kind}:${s._id}`} className="px-5 py-1.5 flex items-center gap-2 text-sm">
+                      <div className={`min-w-0 flex-1 ${cancelled ? "opacity-60" : ""}`}>
+                        <p className={`text-ink truncate text-[13px] ${cancelled ? "line-through" : ""}`}>
+                          {s.patientName ?? "Venda avulsa"}
+                        </p>
+                        <p className="text-ink-faint text-xs truncate">{s.description}</p>
+                      </div>
+                      <p className={`tabular text-[13px] font-medium shrink-0 ${tone}`}>{currency(s.total)}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">

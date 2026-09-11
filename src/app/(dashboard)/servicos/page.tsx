@@ -6,6 +6,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import { usePermission } from "@/components/permissions-provider";
 import { Pencil, Plus, Search, Stethoscope, Package, Trash2, Boxes } from "lucide-react";
 import { colorFor } from "@/lib/palette";
@@ -127,8 +128,11 @@ function ServicosTab() {
   const [editing, setEditing] = useState<Service | null>(null);
 
   // Catálogo: o admin decide em Equipe → Permissões se a recepção
-  // (staff) pode criar/editar/desativar serviços e produtos.
+  // (staff) pode criar/editar serviços e produtos. EXCLUIR é diferente:
+  // fica travado pra admin sempre, não segue esse toggle (ver DELETE em
+  // src/app/api/services/[id]/route.ts).
   const canManage = usePermission("catalog");
+  const isAdmin = useSession().data?.user?.role === "admin";
 
   useEffect(() => {
     loadServices();
@@ -260,6 +264,7 @@ function ServicosTab() {
               price={s.defaultPrice}
               icon={Stethoscope}
               canManage={canManage}
+              canDelete={isAdmin}
               onEdit={() => setEditing(s)}
               onDeactivate={() => handleDeactivate(s._id)}
             />
@@ -356,8 +361,11 @@ function ProdutosTab() {
   const [editing, setEditing] = useState<Product | null>(null);
 
   // Catálogo: o admin decide em Equipe → Permissões se a recepção
-  // (staff) pode criar/editar/desativar serviços e produtos.
+  // (staff) pode criar/editar serviços e produtos. EXCLUIR é diferente:
+  // fica travado pra admin sempre, não segue esse toggle (ver DELETE em
+  // src/app/api/products/[id]/route.ts).
   const canManage = usePermission("catalog");
+  const isAdmin = useSession().data?.user?.role === "admin";
 
   useEffect(() => {
     loadProducts();
@@ -500,6 +508,7 @@ function ProdutosTab() {
               stock={p.stock}
               icon={Package}
               canManage={canManage}
+              canDelete={isAdmin}
               onEdit={() => setEditing(p)}
               onDeactivate={() => handleDeactivate(p._id)}
             />
@@ -592,6 +601,7 @@ function CatalogCard({
   stock,
   icon: Icon,
   canManage,
+  canDelete,
   onEdit,
   onDeactivate,
   index,
@@ -602,6 +612,9 @@ function CatalogCard({
   stock?: number;
   icon: React.ElementType;
   canManage: boolean;
+  // Excluir é mais sensível que editar — trava pra admin sempre,
+  // independente do toggle "catalog" que "canManage" segue.
+  canDelete: boolean;
   onEdit: () => void;
   onDeactivate: () => void;
   index: number;
@@ -621,14 +634,18 @@ function CatalogCard({
       className="card-hover fade-up group relative bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4 flex flex-col gap-3"
       style={{ animationDelay: `${Math.min(index, 11) * 25}ms` }}
     >
-      {canManage && (
+      {(canManage || canDelete) && (
         <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={onEdit} className="text-ink-faint hover:text-blue" aria-label="Editar">
-            <Pencil size={14} />
-          </button>
-          <button onClick={onDeactivate} className="text-ink-faint hover:text-danger" aria-label="Desativar">
-            <Trash2 size={14} />
-          </button>
+          {canManage && (
+            <button onClick={onEdit} className="text-ink-faint hover:text-blue" aria-label="Editar">
+              <Pencil size={14} />
+            </button>
+          )}
+          {canDelete && (
+            <button onClick={onDeactivate} className="text-ink-faint hover:text-danger" aria-label="Excluir (somente admin)" title="Excluir — somente admin">
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       )}
 

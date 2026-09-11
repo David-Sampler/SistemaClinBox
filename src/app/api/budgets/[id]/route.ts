@@ -4,11 +4,12 @@ import { connectDB } from "@/lib/db";
 import { Budget } from "@/models/Budget";
 import { Payment } from "@/models/Payment";
 import { budgetSchema } from "@/lib/validators";
-import { requireSession } from "@/lib/api-auth";
+import { requireSession, requireRole } from "@/lib/api-auth";
 
 // Rota de UM orçamento específico: editar (PUT — status, ou os itens/
 // dentista/observações, pra corrigir um orçamento lançado errado) e
-// excluir (DELETE).
+// excluir (DELETE — apagado de vez, sem soft-delete; restrito a ADMIN,
+// já que não tem volta).
 type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -42,8 +43,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const { error } = await requireSession();
+  const { session, error } = await requireSession();
   if (error) return error;
+  const forbidden = requireRole(session!.user.role, ["admin"]);
+  if (forbidden) return forbidden;
 
   const { id } = await params;
   await connectDB();

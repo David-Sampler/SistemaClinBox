@@ -6,10 +6,17 @@
 // própria — em vez de tudo espremido numa coluna só.
 "use client";
 
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Ban, Minus, Plus, Search, ShoppingCart, Trash2, Stethoscope, Package } from "lucide-react";
+import { Ban, ExternalLink, Minus, Plus, Search, ShoppingCart, ShoppingBag, Trash2, Stethoscope, Package, Wallet } from "lucide-react";
 import { PatientAvatar } from "@/components/patient-avatar";
 import { colorFor } from "@/lib/palette";
+import { Modal } from "@/components/modal";
+// Tipo só — não importa nada em tempo de execução (o arquivo de origem usa
+// Mongoose, que não pode ir pro bundle do cliente), então é seguro puxar
+// daqui em vez de duplicar a forma dos dados.
+import type { RevenueEntry } from "@/lib/revenue";
 
 type CatalogItem = {
   key: string; // "service:ID" ou "product:ID" — identifica de forma única no catálogo
@@ -59,16 +66,6 @@ function periodStart(period: Period): Date {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
-type Sale = {
-  _id: string;
-  items: { name: string; quantity: number; subtotal: number }[];
-  total: number;
-  method: string;
-  status: "pago" | "pendente" | "cancelada";
-  createdAt: string;
-  patient?: { name: string };
-};
-
 const NO_CATEGORY = "Outros";
 const currency = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -81,29 +78,41 @@ const methodLabels: Record<string, string> = {
   convenio: "Convênio",
 };
 
-const saleStatusStyles: Record<Sale["status"], string> = {
+const saleStatusStyles: Record<RevenueEntry["status"], string> = {
   pago: "bg-success-soft text-success",
   pendente: "bg-warning-soft text-warning",
   cancelada: "bg-neutral-soft text-ink-faint",
 };
-const saleStatusLabels: Record<Sale["status"], string> = {
+const saleStatusLabels: Record<RevenueEntry["status"], string> = {
   pago: "Pago",
   pendente: "Pendente",
   cancelada: "Cancelada",
 };
 
+// "kind" de cada linha: venda de balcão/checkout vs. cobrança lançada na
+// ficha do paciente (parcela de orçamento ou avulsa) — só pra dar um
+// selo discreto de origem, já que os dois aparecem juntos agora.
+const kindLabels: Record<RevenueEntry["kind"], string> = { sale: "Venda", payment: "Cobrança" };
+const kindIcons = { sale: ShoppingBag, payment: Wallet };
+
 export function VendaView({ patients }: { patients: { id: string; name: string }[] }) {
+  // Cancelar venda mexe em estoque e nos totais do financeiro — só admin,
+  // mesmo que a pessoa logada tenha permissão pra registrar vendas (ver o
+  // mesmo tipo de trava em src/app/api/sales/[id]/route.ts).
+  const isAdmin = useSession().data?.user?.role === "admin";
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"" | "service" | "product">("");
   const [category, setCategory] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
+  const [sales, setSales] = useState<RevenueEntry[]>([]);
   const [period, setPeriod] = useState<Period>("mes");
   const [loading, setLoading] = useState(true);
   const [salesLoading, setSalesLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Linha clicada na tabela de histórico — abre o modal de detalhe.
+  const [detailEntry, setDetailEntry] = useState<RevenueEntry | null>(null);
 
   useEffect(() => {
     loadCatalog();
@@ -142,18 +151,23 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
     setLoading(false);
   }
 
+  // "sales" aqui é a receita combinada — venda de balcão (Sale) + cobrança
+  // lançada na ficha do paciente (Payment) — não só o carrinho desta
+  // tela. Ver src/lib/revenue.ts pro porquê disso existir.
   async function loadSales() {
     setSalesLoading(true);
     const from = periodStart(period).toISOString();
-    const res = await fetch(`/api/sales?from=${from}&limit=300`);
+    const res = await fetch(`/api/sales/combined?from=${from}&limit=300`);
     const data = await res.json();
-    setSales(data.sales ?? []);
+    setSales(data.entries ?? []);
     setSalesLoading(false);
   }
 
   // Cancela (estorna) uma venda já registrada — fica no histórico, mas
   // sai dos totais de "Recebido"/"A receber", e se tinha produto, a
-  // rota devolve a quantidade pro estoque sozinha.
+  // rota devolve a quantidade pro estoque sozinha. Só se aplica a
+  // "venda" (kind: "sale") — cobrança de paciente é gerenciada na
+  // própria ficha (aba Financeiro), não por aqui.
   async function handleCancelSale(id: string) {
     if (!confirm("Cancelar esta venda? O estoque de produtos vendidos nela é devolvido. Essa ação não pode ser desfeita.")) {
       return;
@@ -168,6 +182,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
       setError(typeof data.error === "string" ? data.error : "Não foi possível cancelar a venda.");
       return;
     }
+    setDetailEntry(null);
     loadSales();
     loadCatalog(); // reflete o estoque devolvido
   }
@@ -556,9 +571,12 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
         <SalesStats sales={sales} loading={salesLoading} />
 
         <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
-          <p className="px-5 py-4 border-b border-line text-sm font-semibold text-ink">
-            Vendas — {PERIOD_LABELS[period].toLowerCase()}
-          </p>
+          <div className="px-5 py-4 border-b border-line">
+            <p className="text-sm font-semibold text-ink">Vendas — {PERIOD_LABELS[period].toLowerCase()}</p>
+            <p className="text-xs text-ink-faint mt-0.5">
+              Inclui vendas de balcão e cobranças lançadas na ficha dos pacientes. Clique numa linha pra ver o detalhe.
+            </p>
+          </div>
           {salesLoading ? (
             <div className="p-4 space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -584,22 +602,28 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                 <tbody>
                   {sales.map((s) => {
                     const cancelled = s.status === "cancelada";
+                    const KindIcon = kindIcons[s.kind];
                     return (
                     <tr
-                      key={s._id}
-                      className={`border-t border-line-soft hover:bg-surface-soft transition-colors ${cancelled ? "opacity-60" : ""}`}
+                      key={`${s.kind}:${s._id}`}
+                      onClick={() => setDetailEntry(s)}
+                      className={`border-t border-line-soft hover:bg-surface-soft transition-colors cursor-pointer ${cancelled ? "opacity-60" : ""}`}
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
-                          <PatientAvatar name={s.patient?.name ?? "Venda avulsa"} size={28} />
-                          <span className={`text-ink whitespace-nowrap ${cancelled ? "line-through" : ""}`}>
-                            {s.patient?.name ?? "Venda avulsa"}
-                          </span>
+                          <PatientAvatar name={s.patientName ?? "Venda avulsa"} size={28} />
+                          <div className="min-w-0">
+                            <span className={`block text-ink whitespace-nowrap ${cancelled ? "line-through" : ""}`}>
+                              {s.patientName ?? "Venda avulsa"}
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[10px] text-ink-faint">
+                              <KindIcon size={10} />
+                              {kindLabels[s.kind]}
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-ink-muted max-w-[240px] truncate">
-                        {s.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
-                      </td>
+                      <td className="px-5 py-3 text-ink-muted max-w-[240px] truncate">{s.description}</td>
                       <td className="px-5 py-3 text-ink-muted whitespace-nowrap">
                         {methodLabels[s.method] ?? s.method}
                       </td>
@@ -615,15 +639,31 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                         {currency(s.total)}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        {!cancelled && (
+                        {/* Cancelar só existe pra venda (kind "sale") — cobrança de
+                            paciente se gerencia na própria ficha. */}
+                        {!cancelled && s.kind === "sale" && isAdmin && (
                           <button
-                            onClick={() => handleCancelSale(s._id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelSale(s._id);
+                            }}
                             className="w-7 h-7 inline-flex items-center justify-center rounded-md text-ink-faint hover:bg-danger-soft hover:text-danger transition-colors"
                             aria-label="Cancelar venda"
                             title="Cancelar venda"
                           >
                             <Ban size={14} />
                           </button>
+                        )}
+                        {s.kind === "payment" && s.patientId && (
+                          <Link
+                            href={`/pacientes/${s.patientId}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-md text-ink-faint hover:bg-surface-soft hover:text-blue transition-colors"
+                            aria-label="Ver ficha do paciente"
+                            title="Ver ficha do paciente"
+                          >
+                            <ExternalLink size={14} />
+                          </Link>
                         )}
                       </td>
                     </tr>
@@ -635,11 +675,19 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
           )}
         </div>
       </div>
+
+      {detailEntry && (
+        <RevenueDetailModal
+          entry={detailEntry}
+          onClose={() => setDetailEntry(null)}
+          onCancelSale={detailEntry.kind === "sale" && isAdmin ? () => handleCancelSale(detailEntry._id) : undefined}
+        />
+      )}
     </div>
   );
 }
 
-function SalesStats({ sales, loading }: { sales: Sale[]; loading: boolean }) {
+function SalesStats({ sales, loading }: { sales: RevenueEntry[]; loading: boolean }) {
   if (loading) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -694,5 +742,99 @@ function StatCard({
       <p className={`font-display text-xl font-semibold tabular mt-1 ${toneClass}`}>{value}</p>
       <p className="text-xs text-ink-faint mt-0.5">{detail}</p>
     </div>
+  );
+}
+
+// Detalhe de uma linha do histórico (venda OU cobrança de paciente) —
+// abre ao clicar na linha da tabela. Pra "venda" mostra item a item e
+// permite cancelar direto daqui; pra "cobrança" mostra a descrição e
+// manda pra ficha do paciente (é lá que ela é editada/cancelada).
+function RevenueDetailModal({
+  entry,
+  onClose,
+  onCancelSale,
+}: {
+  entry: RevenueEntry;
+  onClose: () => void;
+  onCancelSale?: () => void;
+}) {
+  const KindIcon = kindIcons[entry.kind];
+  const cancelled = entry.status === "cancelada";
+
+  return (
+    <Modal title={entry.patientName ?? "Venda avulsa"} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-surface-soft text-ink-muted">
+            <KindIcon size={12} />
+            {kindLabels[entry.kind]}
+          </span>
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${saleStatusStyles[entry.status]}`}>
+            {saleStatusLabels[entry.status]}
+          </span>
+        </div>
+
+        {entry.patientId && (
+          <Link
+            href={`/pacientes/${entry.patientId}`}
+            className="inline-flex items-center gap-1 text-sm text-blue hover:underline"
+          >
+            Ver ficha do paciente <ExternalLink size={13} />
+          </Link>
+        )}
+
+        <div>
+          <p className="text-xs font-medium text-ink-muted mb-1.5">
+            {entry.kind === "sale" ? "Itens" : "Descrição"}
+          </p>
+          {entry.items && entry.items.length > 0 ? (
+            <ul className="text-sm divide-y divide-line-soft border border-line-soft rounded-lg overflow-hidden">
+              {entry.items.map((i, idx) => (
+                <li key={idx} className="flex items-center justify-between px-3 py-2 bg-surface-soft">
+                  <span className="text-ink-muted">
+                    {i.quantity}× {i.name}
+                  </span>
+                  <span className="text-ink tabular">{currency(i.subtotal)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-ink">{entry.description}</p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-xs text-ink-faint">Forma de pagamento</p>
+            <p className="text-ink font-medium">{methodLabels[entry.method] ?? entry.method}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-faint">Data</p>
+            <p className="text-ink font-medium">
+              {new Date(entry.createdAt).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })}{" "}
+              às {new Date(entry.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-line pt-4">
+          <p className="text-ink-muted">Total</p>
+          <p className="font-display text-xl font-semibold text-ink tabular">{currency(entry.total)}</p>
+        </div>
+
+        {onCancelSale && !cancelled && (
+          <button
+            onClick={onCancelSale}
+            className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg border border-danger/30 text-danger hover:bg-danger-soft transition-colors"
+          >
+            <Ban size={14} /> Cancelar venda
+          </button>
+        )}
+      </div>
+    </Modal>
   );
 }
