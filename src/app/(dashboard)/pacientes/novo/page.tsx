@@ -1,8 +1,10 @@
 // Formulário de CADASTRO de um novo paciente.
 "use client";
 
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AlertTriangle } from "lucide-react";
 import { formatCPF } from "@/lib/cpf";
 import { formatPhone } from "@/lib/phone";
 
@@ -30,11 +32,44 @@ function NewPatientForm() {
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
+  // Aviso de "provável duplicata" (mesmo CPF ou nome parecido de um
+  // paciente já cadastrado) devolvido pela API antes de criar de fato —
+  // guarda o payload que tentou salvar pra poder reenviar com
+  // confirmDuplicate:true se a pessoa confirmar que não é duplicata.
+  const [duplicateWarning, setDuplicateWarning] = useState<{ message: string; patientId: string } | null>(null);
+  const pendingPayloadRef = useRef<Record<string, unknown> | null>(null);
+
+  async function submitPatient(payload: Record<string, unknown>) {
+    const res = await fetch("/api/patients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      router.push(`/pacientes/${data.patient._id}`);
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 409 && data.duplicate) {
+      setDuplicateWarning({ message: data.error, patientId: data.duplicate.patient.id });
+      return;
+    }
+    const flat = data.error?.fieldErrors as FieldErrors | undefined;
+    if (flat) {
+      setFieldErrors(flat);
+      setError("Verifique os campos destacados abaixo.");
+    } else {
+      setError(typeof data.error === "string" ? data.error : "Não foi possível salvar o paciente. Verifique os campos.");
+    }
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setFieldErrors({});
+    setDuplicateWarning(null);
     setLoading(true);
 
     // FormData lê todos os campos do formulário pelo atributo "name" de cada input
@@ -64,29 +99,18 @@ function NewPatientForm() {
       // (ver src/components/anamnesis-form.tsx). Isso deixa o cadastro
       // rápido pra quem está na recepção, sem travar em campos clínicos.
     };
+    pendingPayloadRef.current = payload;
 
-    const res = await fetch("/api/patients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
+    await submitPatient(payload);
     setLoading(false);
+  }
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const flat = data.error?.fieldErrors as FieldErrors | undefined;
-      if (flat) {
-        setFieldErrors(flat);
-        setError("Verifique os campos destacados abaixo.");
-      } else {
-        setError("Não foi possível salvar o paciente. Verifique os campos.");
-      }
-      return;
-    }
-
-    const data = await res.json();
-    router.push(`/pacientes/${data.patient._id}`);
+  async function handleConfirmDuplicate() {
+    if (!pendingPayloadRef.current) return;
+    setLoading(true);
+    setError(null);
+    await submitPatient({ ...pendingPayloadRef.current, confirmDuplicate: true });
+    setLoading(false);
   }
 
   return (
@@ -176,6 +200,31 @@ function NewPatientForm() {
           <p className="text-sm text-danger bg-danger-soft border border-danger/20 rounded-lg px-3 py-2">
             {error}
           </p>
+        )}
+
+        {duplicateWarning && (
+          <div className="flex gap-2.5 rounded-lg border border-warning/20 bg-warning-soft px-3.5 py-3 text-sm text-warning">
+            <AlertTriangle size={16} className="mt-px shrink-0" />
+            <div className="space-y-2">
+              <p>{duplicateWarning.message} Confira se não é a mesma pessoa antes de continuar.</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href={`/pacientes/${duplicateWarning.patientId}`}
+                  className="font-medium underline underline-offset-2"
+                >
+                  Ver cadastro existente
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleConfirmDuplicate}
+                  disabled={loading}
+                  className="font-medium underline underline-offset-2 disabled:opacity-60"
+                >
+                  Não é a mesma pessoa — cadastrar mesmo assim
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         <div className="flex gap-3">
