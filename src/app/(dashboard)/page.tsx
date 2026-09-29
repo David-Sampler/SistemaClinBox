@@ -227,11 +227,9 @@ export default async function DashboardHome() {
           className="absolute -left-10 bottom-0 w-56 h-56 rounded-full bg-brass/10 blur-3xl"
         />
         <div className="relative flex items-center gap-4">
-          {/* version=Date.now(): essa página é renderizada de novo no
-              servidor a cada visita (usa a sessão), então isso gera uma
-              URL sempre nova — sem depender de nenhuma regra de cache
-              do navegador pra mostrar a foto mais recente aqui. */}
-          <UserAvatar userId={userId} name={userName} size={56} tone="sidebar" version={Date.now()} className="ring-2 ring-white/15" />
+          {/* A versão do avatar fica ligada ao usuário atual para evitar
+              render impuro e também impedir cache cruzado entre contas. */}
+          <UserAvatar userId={userId} name={userName} size={56} tone="sidebar" version={userId || "guest"} className="ring-2 ring-white/15" />
           <div>
             <h1 className="font-display text-2xl font-semibold text-sidebar-heading">
               {greeting()}, {userName.split(" ")[0]}
@@ -325,7 +323,10 @@ export default async function DashboardHome() {
                     <PatientAvatar name={patient?.name ?? appt.patientName ?? "?"} size={32} />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-ink truncate">{patient?.name ?? appt.patientName ?? "Paciente"}</p>
-                      <p className="text-ink-muted truncate">com {dentist?.name ?? "—"}</p>
+                      <p className="text-ink-muted truncate flex items-center gap-1.5">
+                        <span>com {dentist?.name ?? "—"}</span>
+                        {appt.procedure && <span className="text-ink-faint">• {appt.procedure}</span>}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-ink tabular">

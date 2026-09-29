@@ -23,13 +23,13 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} />
       <div
-        className={`anim-scale-in relative bg-surface rounded-xl border border-line shadow-xl w-full ${wide ? "max-w-lg" : "max-w-md"} p-6 max-h-[90vh] overflow-y-auto`}
+        className={`anim-scale-in relative bg-surface/95 rounded-2xl border border-line shadow-[0_20px_60px_rgba(15,23,42,0.18)] w-full ${wide ? "max-w-2xl" : "max-w-lg"} p-5 sm:p-6 max-h-[90vh] overflow-y-auto`}
       >
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-5 pb-3 border-b border-line">
           <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-soft transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-muted hover:bg-surface-soft transition-colors"
             aria-label="Fechar"
           >
             <X size={16} />

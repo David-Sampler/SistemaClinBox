@@ -19,7 +19,7 @@ export function UserAvatar({
   name: string;
   size?: number;
   tone?: "default" | "sidebar";
-  version?: number;
+  version?: string | number;
   className?: string;
 }) {
   const src = `/api/users/${userId}/avatar${version ? `?v=${version}` : ""}`;

@@ -70,9 +70,14 @@ export async function POST(req: NextRequest) {
 
   // Verifica se o dentista já tem outra consulta que "esbarra" nesse horário
   // (evita marcar dois pacientes ao mesmo tempo com o mesmo dentista).
+  const activeConflictStatuses: Array<"agendado" | "confirmado" | "em_atendimento"> = [
+    "agendado",
+    "confirmado",
+    "em_atendimento",
+  ];
   const conflict = await Appointment.findOne({
     dentist: parsed.data.dentist,
-    status: { $nin: ["cancelado", "falta"] },
+    status: { $in: activeConflictStatuses },
     start: { $lt: end },
     end: { $gt: start },
   });

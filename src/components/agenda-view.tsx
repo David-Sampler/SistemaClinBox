@@ -5,14 +5,13 @@
 // ver/alterar o status de uma consulta.
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ChevronLeft, ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Clock3, Pencil, Plus, Trash2, X } from "lucide-react";
 import { addDays, format, isSameDay, isToday, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { StatusBadge, isAppointmentOverdue } from "@/components/status-badge";
 import { PatientAvatar } from "@/components/patient-avatar";
-import { UserAvatar } from "@/components/user-avatar";
 import { WhatsAppLink } from "@/components/whatsapp-link";
 import { Modal } from "@/components/modal";
 
@@ -151,12 +150,9 @@ export function AgendaView({
   const [editingSchedule, setEditingSchedule] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setEditingSchedule(false);
-    setEditError(null);
-  }, [selected?._id]);
+  const activeDate = followingToday ? todayISO() : date;
 
-  const weekStart = startOfWeek(parseISO(date), { weekStartsOn: 1 });
+  const weekStart = startOfWeek(parseISO(activeDate), { weekStartsOn: 1 });
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
     [weekStart]
@@ -165,7 +161,7 @@ export function AgendaView({
   useEffect(() => {
     loadAppointments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, view, dentistFilter]);
+  }, [activeDate, view, dentistFilter]);
 
   // Atualiza a linha de "agora" a cada minuto.
   useEffect(() => {
@@ -173,15 +169,9 @@ export function AgendaView({
     return () => clearInterval(interval);
   }, []);
 
-  // Se a tela ainda está "seguindo hoje" (ninguém navegou manualmente) e
-  // o dia virou de verdade (aba aberta passando da meia-noite), avança
-  // o dia mostrado sozinho — sem isso, ficava preso no dia de ontem até
-  // alguém recarregar a página. Roda de novo a cada "tick" de `now`.
-  useEffect(() => {
-    if (followingToday && date !== todayISO()) {
-      setDate(todayISO());
-    }
-  }, [now, followingToday, date]);
+  // A data visível deriva do "seguir hoje" sem precisar sincronizar o
+  // estado da data em um effect — isso evita render cascata enquanto a
+  // hora real continua avançando no relógio do navegador.
 
   // Devolve a lista carregada (não só guarda no estado) pra quem precisa
   // conferir o resultado logo em seguida — ex: depois de editar uma
@@ -189,8 +179,8 @@ export function AgendaView({
   // (nome do dentista/paciente), que a resposta do PUT sozinha não traz.
   async function loadAppointments() {
     setLoading(true);
-    const rangeStart = view === "week" ? weekDays[0] : parseISO(date);
-    const rangeEnd = view === "week" ? weekDays[6] : parseISO(date);
+    const rangeStart = view === "week" ? weekDays[0] : parseISO(activeDate);
+    const rangeEnd = view === "week" ? weekDays[6] : parseISO(activeDate);
     const from = new Date(`${format(rangeStart, "yyyy-MM-dd")}T00:00:00`).toISOString();
     const to = new Date(`${format(rangeEnd, "yyyy-MM-dd")}T23:59:59`).toISOString();
     const params = new URLSearchParams({ from, to });
@@ -204,19 +194,25 @@ export function AgendaView({
     return list;
   }
 
-  function openNewAppointment(opts?: { dayISO?: string; time?: string; dentistId?: string }) {
-    setFormDate(opts?.dayISO ?? date);
-    setFormTime(opts?.time ?? "");
-    setFormDentist(opts?.dentistId ?? "");
-    setShowForm(true);
-  }
+  const openNewAppointment = useCallback(
+    (opts?: { dayISO?: string; time?: string; dentistId?: string }) => {
+      setFormDate(opts?.dayISO ?? activeDate);
+      setFormTime(opts?.time ?? "");
+      setFormDentist(opts?.dentistId ?? "");
+      setShowForm(true);
+    },
+    [activeDate]
+  );
 
   // Veio de "/agenda?novo=1" (atalho "Novo agendamento" do painel
   // inicial) — abre o formulário direto, sem exigir mais um clique.
   useEffect(() => {
-    if (autoOpenNew) openNewAppointment();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!autoOpenNew) return;
+    const timer = setTimeout(() => {
+      openNewAppointment();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [autoOpenNew, openNewAppointment]);
 
   // Clicar no nome de um dentista filtra a agenda só pra ele E já pula
   // direto pro dia da próxima consulta marcada dele (a partir de hoje)
@@ -385,11 +381,11 @@ export function AgendaView({
   return (
     <div className="space-y-4">
       {/* Barra de navegação: período + alternador de visão + filtro + ação principal */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1 bg-surface border border-line rounded-lg p-1">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface/80 p-2 shadow-sm shadow-ink/[0.02] backdrop-blur-sm">
+        <div className="flex items-center gap-1 bg-surface-soft border border-line rounded-lg p-1">
           <button
             onClick={goPrev}
-            className="w-8 h-8 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-soft transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface transition-colors"
             aria-label={view === "week" ? "Semana anterior" : "Dia anterior"}
           >
             <ChevronLeft size={16} />
@@ -399,13 +395,13 @@ export function AgendaView({
               setFollowingToday(true);
               setDate(todayISO());
             }}
-            className="px-2.5 h-8 text-xs font-medium rounded-md text-ink-muted hover:bg-surface-soft transition-colors"
+            className="px-2.5 h-8 text-xs font-medium rounded-md text-ink-muted hover:bg-surface transition-colors"
           >
             Hoje
           </button>
           <button
             onClick={goNext}
-            className="w-8 h-8 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-soft transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface transition-colors"
             aria-label={view === "week" ? "Próxima semana" : "Próximo dia"}
           >
             <ChevronRight size={16} />
@@ -423,17 +419,17 @@ export function AgendaView({
             setFollowingToday(false);
             setDate(e.target.value);
           }}
-          className="text-sm text-ink-muted bg-transparent border-none focus:outline-none cursor-pointer"
+          className="rounded-md border border-line bg-surface-soft px-2.5 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 cursor-pointer"
         />
 
         {/* Alternador Dia / Semana */}
-        <div className="flex items-center gap-1 bg-surface border border-line rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-surface-soft border border-line rounded-lg p-1">
           {(["day", "week"] as View[]).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
               className={`px-3 h-8 text-xs font-medium rounded-md transition-colors ${
-                view === v ? "bg-blue text-white" : "text-ink-muted hover:bg-surface-soft"
+                view === v ? "bg-blue text-white shadow-sm" : "text-ink-muted hover:bg-surface"
               }`}
             >
               {v === "day" ? "Dia" : "Semana"}
@@ -445,7 +441,7 @@ export function AgendaView({
           <select
             value={dentistFilter}
             onChange={(e) => setDentistFilter(e.target.value)}
-            className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
+            className="rounded-lg border border-line bg-surface-soft px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
           >
             <option value="">Todos os dentistas</option>
             {dentists.map((d) => (
@@ -455,7 +451,7 @@ export function AgendaView({
             ))}
           </select>
 
-          <button onClick={() => openNewAppointment()} className="btn-primary">
+          <button onClick={() => openNewAppointment()} className="btn-primary shadow-sm shadow-blue/20">
             <Plus size={16} /> Novo agendamento
           </button>
         </div>
@@ -464,9 +460,12 @@ export function AgendaView({
       {/* Legenda dos tipos de consulta — mesma cor usada na borda dos
           blocos, pra quem olha a agenda entender o código de cores sem
           precisar abrir uma consulta pra descobrir o que cada uma significa. */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1">
         {TYPE_OPTIONS.map((t) => (
-          <span key={t.value} className="inline-flex items-center gap-1.5 text-xs text-ink-muted">
+          <span
+            key={t.value}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-soft px-2 py-1 text-[11px] font-medium text-ink-muted"
+          >
             <span className={`w-2 h-2 rounded-full shrink-0 ${TYPE_DOT_COLORS[t.value]}`} />
             {t.label}
           </span>
@@ -518,7 +517,14 @@ export function AgendaView({
                         title="Ir para a próxima consulta desse dentista"
                         className="w-full h-11 border-b border-line flex items-center gap-2 px-3 sticky top-0 bg-surface z-10 hover:bg-surface-soft transition-colors"
                       >
-                        <UserAvatar userId={dentist.id} name={dentist.name} size={22} />
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-soft text-blue-strong text-[11px] font-semibold">
+                          {dentist.name
+                            .split(" ")
+                            .map((part) => part[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()}
+                        </div>
                         <span className="text-sm font-medium text-ink truncate">{dentist.name}</span>
                       </button>
                       <div
@@ -557,9 +563,11 @@ export function AgendaView({
                     >
                       <button
                         onClick={() => openNewAppointment({ dayISO })}
-                        className="w-full h-11 border-b border-line flex flex-col items-center justify-center gap-0.5 sticky top-0 bg-surface z-10 hover:bg-surface-soft transition-colors"
+                        className={`w-full h-11 border-b border-line flex flex-col items-center justify-center gap-0.5 sticky top-0 z-10 transition-colors ${
+                          isTodayCol ? "bg-blue-soft text-blue-strong" : "bg-surface hover:bg-surface-soft text-ink"
+                        }`}
                       >
-                        <span className="text-[11px] text-ink-faint uppercase leading-none">
+                        <span className="text-[11px] uppercase leading-none opacity-80">
                           {format(day, "EEE", { locale: ptBR }).replace(".", "")}
                         </span>
                         {isTodayCol ? (
@@ -567,7 +575,7 @@ export function AgendaView({
                             {format(day, "d")}
                           </span>
                         ) : (
-                          <span className="text-sm font-medium leading-tight tabular text-ink">
+                          <span className="text-sm font-medium leading-tight tabular">
                             {format(day, "d")}
                           </span>
                         )}
@@ -603,9 +611,16 @@ export function AgendaView({
       {showForm && (
         <Modal onClose={() => setShowForm(false)} title="Novo agendamento">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <PatientField patients={patients} />
+            <div className="rounded-xl border border-line bg-surface-soft/40 p-3">
+              <PatientField patients={patients} />
+            </div>
             <Field label="Dentista">
-              <select name="dentist" required defaultValue={formDentist || dentistFilter} className="input">
+              <select
+                name="dentist"
+                required
+                defaultValue={formDentist || dentistFilter}
+                className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+              >
                 <option value="">Selecione...</option>
                 {dentists.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -616,15 +631,32 @@ export function AgendaView({
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Data">
-                <input name="date" type="date" required defaultValue={formDate} className="input" />
+                <input
+                  name="date"
+                  type="date"
+                  required
+                  defaultValue={formDate}
+                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                />
               </Field>
               <Field label="Horário">
-                <input name="time" type="time" required defaultValue={formTime} className="input" />
+                <input
+                  name="time"
+                  type="time"
+                  required
+                  defaultValue={formTime}
+                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                />
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Tipo de consulta">
-                <select name="type" required defaultValue="avaliacao" className="input">
+                <select
+                  name="type"
+                  required
+                  defaultValue="avaliacao"
+                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                >
                   {TYPE_OPTIONS.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}
@@ -633,21 +665,28 @@ export function AgendaView({
                 </select>
               </Field>
               <Field label="Duração (min)">
-                <input name="duration" type="number" min={10} step={5} defaultValue={30} className="input" />
+                <input
+                  name="duration"
+                  type="number"
+                  min={10}
+                  step={5}
+                  defaultValue={30}
+                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                />
               </Field>
             </div>
             <Field label="Procedimento">
               <textarea
                 name="procedure"
                 rows={3}
-                className="input"
+                className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 resize-none"
                 placeholder="Detalhe o que será feito nessa consulta..."
               />
             </Field>
 
             {error && <p className="text-sm text-danger">{error}</p>}
 
-            <button type="submit" className="w-full btn-primary">
+            <button type="submit" className="w-full btn-primary shadow-sm shadow-blue/20">
               Agendar
             </button>
           </form>
@@ -657,13 +696,15 @@ export function AgendaView({
       {/* Painel lateral: detalhe/status de uma consulta selecionada */}
       {selected && (
         <SidePanel onClose={() => setSelected(null)}>
-          <p className="text-xs text-ink-faint uppercase tracking-wide mb-1">Consulta</p>
-          <div className="flex items-center gap-3 mb-1">
-            <PatientAvatar name={selected.patient?.name ?? selected.patientName ?? "?"} size={40} />
-            <h3 className="font-display text-xl font-semibold text-ink flex-1">
-              {selected.patient?.name ?? selected.patientName ?? "Paciente"}
-            </h3>
-            <WhatsAppLink phone={selected.patient?.phone} size={17} />
+          <div className="mb-4 rounded-2xl border border-line bg-surface-soft/50 p-3">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-ink-faint mb-2">Consulta</p>
+            <div className="flex items-center gap-3">
+              <PatientAvatar name={selected.patient?.name ?? selected.patientName ?? "?"} size={40} />
+              <h3 className="font-display text-xl font-semibold text-ink flex-1">
+                {selected.patient?.name ?? selected.patientName ?? "Paciente"}
+              </h3>
+              <WhatsAppLink phone={selected.patient?.phone} size={17} />
+            </div>
           </div>
           <div className="mb-4">
             {!selected.patient && (
@@ -687,7 +728,12 @@ export function AgendaView({
                 defaultPatientName={selected.patientName}
               />
               <Field label="Dentista">
-                <select name="dentist" required defaultValue={selected.dentist?._id ?? ""} className="input">
+                <select
+                  name="dentist"
+                  required
+                  defaultValue={selected.dentist?._id ?? ""}
+                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                >
                   <option value="">Selecione...</option>
                   {dentists.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -703,7 +749,7 @@ export function AgendaView({
                     type="date"
                     required
                     defaultValue={format(new Date(selected.start), "yyyy-MM-dd")}
-                    className="input"
+                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                   />
                 </Field>
                 <Field label="Horário">
@@ -712,13 +758,18 @@ export function AgendaView({
                     type="time"
                     required
                     defaultValue={format(new Date(selected.start), "HH:mm")}
-                    className="input"
+                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                   />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Tipo de consulta">
-                  <select name="type" required defaultValue={selected.type || "avaliacao"} className="input">
+                  <select
+                    name="type"
+                    required
+                    defaultValue={selected.type || "avaliacao"}
+                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                  >
                     {TYPE_OPTIONS.map((t) => (
                       <option key={t.value} value={t.value}>
                         {t.label}
@@ -735,12 +786,17 @@ export function AgendaView({
                     defaultValue={Math.round(
                       (new Date(selected.end).getTime() - new Date(selected.start).getTime()) / 60000
                     )}
-                    className="input"
+                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                   />
                 </Field>
               </div>
               <Field label="Procedimento">
-                <textarea name="procedure" rows={3} defaultValue={selected.procedure} className="input" />
+                <textarea
+                  name="procedure"
+                  rows={3}
+                  defaultValue={selected.procedure}
+                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 resize-none"
+                />
               </Field>
 
               {editError && <p className="text-sm text-danger">{editError}</p>}
@@ -755,19 +811,19 @@ export function AgendaView({
               </div>
             </form>
           ) : (
-            <dl className="space-y-3 text-sm mb-6">
+            <dl className="space-y-3 text-sm mb-6 rounded-2xl border border-line bg-surface-soft/40 p-3">
               {selected.patient?.phone && (
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <dt className="text-ink-muted">Telefone</dt>
                   <dd className="text-ink font-medium tabular">{selected.patient.phone}</dd>
                 </div>
               )}
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <dt className="text-ink-muted">Dentista</dt>
                 <dd className="text-ink font-medium">{selected.dentist?.name ?? "—"}</dd>
               </div>
               {selected.type && (
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-3">
                   <dt className="text-ink-muted">Tipo</dt>
                   <dd className="text-ink font-medium inline-flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${TYPE_DOT_COLORS[selected.type] ?? "bg-ink-faint"}`} />
@@ -799,12 +855,12 @@ export function AgendaView({
                 // rótulo em cima do valor em vez de lado a lado (o layout
                 // "flex justify-between" das outras linhas só funciona
                 // bem pra valores curtos de uma linha só).
-                <div>
-                  <dt className="text-ink-muted mb-1">Procedimento</dt>
-                  <dd className="text-ink font-medium whitespace-pre-wrap">{selected.procedure}</dd>
+                <div className="pt-3 border-t border-line">
+                  <dt className="text-ink-muted mb-1 text-[11px] uppercase tracking-[0.12em]">Procedimento</dt>
+                  <dd className="text-ink font-medium whitespace-pre-wrap leading-relaxed">{selected.procedure}</dd>
                 </div>
               )}
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-3">
                 <dt className="text-ink-muted">Status</dt>
                 <dd>
                   <StatusBadge status={selected.status} overdue={isAppointmentOverdue(selected)} />
@@ -921,7 +977,8 @@ function AppointmentBlock({
   const start = new Date(appt.start);
   const end = new Date(appt.end);
   const top = minutesToTop(start);
-  const height = Math.max(((end.getTime() - start.getTime()) / 60000 / 60) * HOUR_PX, 26);
+  const baseHeight = ((end.getTime() - start.getTime()) / 60000 / 60) * HOUR_PX;
+  const height = Math.max(baseHeight, appt.procedure ? 72 : 32);
 
   // Cor de fundo/texto vem do STATUS (como sempre foi); a cor da BORDA
   // esquerda vem do TIPO quando definido (mais chamativo que a bolinha
@@ -943,12 +1000,12 @@ function AppointmentBlock({
   // no componente pai).
   const overdue = isAppointmentOverdue(appt);
   const statusStyle = overdue
-    ? { bg: "bg-warning-soft", border: "border-warning/50", text: "text-warning" }
+    ? { bg: "bg-warning-soft", border: "border-warning/80", text: "text-warning" }
     : STATUS_STYLES[appt.status] ?? STATUS_STYLES.agendado;
   // Atrasada: a borda esquerda também vai pra cor de alerta (ignora a cor
   // do tipo de consulta), reforçando o aviso.
   const borderColor = overdue
-    ? "border-warning/70"
+    ? "border-warning/90"
     : (appt.type && TYPE_BORDER_COLORS[appt.type]) || statusStyle.border;
 
   // Quando há mais de uma consulta no mesmo horário (visão semanal com
@@ -980,36 +1037,39 @@ function AppointmentBlock({
             ? TYPE_LABELS[appt.type] ?? appt.type
             : undefined
       }
-      className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1 rounded-md border-l-4 text-left overflow-hidden shadow-sm shadow-ink/[0.04] hover:brightness-95 hover:shadow-md hover:scale-[1.02] transition-[filter,box-shadow,transform] ${borderColor} ${statusStyle.bg} ${statusStyle.text}`}
+      className={`absolute z-10 hover:z-20 ${usesLanes ? "px-1" : "left-1 right-1 px-2"} py-1.5 rounded-xl border-l-4 text-left overflow-hidden shadow-sm shadow-ink/[0.04] hover:brightness-95 hover:shadow-md hover:scale-[1.01] transition-[filter,box-shadow,transform] ${compact ? "py-1" : "py-1.5"} ${borderColor} ${statusStyle.bg} ${statusStyle.text}`}
     >
-      <p className="text-[11px] font-semibold leading-tight truncate inline-flex items-center gap-1">
-        {overdue && <AlertTriangle size={11} className="shrink-0" />}
-        {/* Bolinha colorida do tipo de consulta — reforça a cor da borda,
-            dá pra reconhecer o tipo mesmo em blocos bem estreitos (visão
-            semana com vários dentistas). Some sozinha se a consulta não
-            tiver tipo definido (ex: consultas antigas, de antes desse
-            campo existir). */}
-        {appt.type && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_DOT_COLORS[appt.type] ?? "bg-ink-faint"}`} />}
-        {start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-        {!compact && ` · ${appt.patient?.name ?? appt.patientName ?? "Paciente"}`}
-      </p>
-      {compact && (
-        <p className="text-[11px] leading-tight truncate">{appt.patient?.name ?? appt.patientName ?? "Paciente"}</p>
-      )}
-      {/* Antes só aparecia na visão "Dia" (!compact) — a visão "Semana"
-          também tem altura de sobra quando a consulta dura bastante, então
-          o procedimento aparece nela também agora, não só no hover/tooltip. */}
-      {height > 34 && appt.procedure && (
-        <p className="text-[11px] leading-tight truncate opacity-80">{appt.procedure}</p>
-      )}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <p className={`font-semibold leading-tight truncate inline-flex items-center gap-1.5 ${compact ? "text-[10px]" : "text-[11px]"}`}>
+          {overdue && <Clock3 size={11} className="shrink-0 text-warning" />}
+          {appt.type && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_DOT_COLORS[appt.type] ?? "bg-ink-faint"}`} />}
+          <span className="truncate">{start.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+          {!compact && <span className="truncate">· {appt.patient?.name ?? appt.patientName ?? "Paciente"}</span>}
+        </p>
+        {compact && (
+          <p className="text-[10px] leading-tight truncate font-medium opacity-95">
+            {appt.patient?.name ?? appt.patientName ?? "Paciente"}
+          </p>
+        )}
+        {appt.procedure && (
+          <div className={`inline-flex w-fit items-center rounded-full border border-current/10 bg-white/10 px-1.5 py-0.5 font-semibold uppercase tracking-[0.08em] opacity-90 ${compact ? "text-[8.5px]" : "text-[9.5px]"}`}>
+            Procedimento
+          </div>
+        )}
+        {appt.procedure && (
+          <p className={`leading-snug whitespace-normal break-words opacity-90 font-medium ${compact ? "text-[9px]" : "text-[10.5px]"}`}>
+            {appt.procedure}
+          </p>
+        )}
+      </div>
     </button>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="block text-xs font-medium text-ink-muted mb-1">{label}</label>
+    <div className="space-y-1.5">
+      <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">{label}</label>
       {children}
     </div>
   );
@@ -1042,26 +1102,49 @@ function PatientField({
   defaultPatientId?: string;
   defaultPatientName?: string;
 }) {
-  const [unregistered, setUnregistered] = useState(!defaultPatientId && !!defaultPatientName);
+  const [mode, setMode] = useState<"existing" | "new">(
+    defaultPatientId ? "existing" : "new"
+  );
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <label className="block text-xs font-medium text-ink-muted">Paciente</label>
-        <label className="flex items-center gap-1.5 text-[11px] text-ink-muted cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={unregistered}
-            onChange={(e) => setUnregistered(e.target.checked)}
-            className="accent-blue"
-          />
-          Ainda não cadastrado
-        </label>
+      <div className="flex items-center justify-between mb-1.5 gap-2">
+        <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Paciente</label>
+        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+          <button
+            type="button"
+            onClick={() => setMode("existing")}
+            className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+              mode === "existing" ? "bg-blue text-white" : "text-ink-muted"
+            }`}
+          >
+            Cadastrado
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("new")}
+            className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+              mode === "new" ? "bg-blue text-white" : "text-ink-muted"
+            }`}
+          >
+            Novo
+          </button>
+        </div>
       </div>
-      {unregistered ? (
-        <input name="patientName" defaultValue={defaultPatientName} placeholder="Nome do paciente" className="input" />
+      {mode === "new" ? (
+        <input
+          name="patientName"
+          defaultValue={defaultPatientName}
+          placeholder="Nome do paciente"
+          className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+        />
       ) : (
-        <select name="patient" required defaultValue={defaultPatientId ?? ""} className="input">
+        <select
+          name="patient"
+          required
+          defaultValue={defaultPatientId ?? ""}
+          className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+        >
           <option value="">Selecione...</option>
           {patients.map((p) => (
             <option key={p.id} value={p.id}>
