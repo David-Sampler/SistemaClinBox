@@ -8,19 +8,34 @@ import { requireSession } from "@/lib/api-auth";
 import { onlyDigits } from "@/lib/cpf";
 import { namesAreSimilar } from "@/lib/similarity";
 
-// GET /api/patients?q=busca -> lista pacientes ativos, com busca opcional por texto
+// GET /api/patients?q=busca&page=1&limit=10 -> lista pacientes ativos com paginação
 export async function GET(req: NextRequest) {
   const { session, error } = await requireSession();
   if (error) return error;
 
   await connectDB();
+
   const q = req.nextUrl.searchParams.get("q");
+  const page = Math.max(1, Number(req.nextUrl.searchParams.get("page") ?? 1));
+  const limit = Math.min(50, Math.max(1, Number(req.nextUrl.searchParams.get("limit") ?? 10)));
+  const skip = (page - 1) * limit;
+
   const filter = q
     ? { active: true, $text: { $search: q } }
     : { active: true };
 
-  const patients = await Patient.find(filter).sort({ name: 1 }).limit(100).lean();
-  return NextResponse.json({ patients });
+  const [patients, total] = await Promise.all([
+    Patient.find(filter).sort({ name: 1 }).skip(skip).limit(limit).lean(),
+    Patient.countDocuments(filter),
+  ]);
+
+  return NextResponse.json({
+    patients,
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  });
 }
 
 // POST /api/patients -> cadastra um novo paciente

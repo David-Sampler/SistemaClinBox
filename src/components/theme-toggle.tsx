@@ -5,7 +5,7 @@
 // equipe pode usar o tema que preferir, sem afetar as outras.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Palette } from "lucide-react";
 
 type PaletteName = "saude" | "clinic" | "green";
@@ -21,28 +21,30 @@ const paletteLabels: Record<PaletteName, string> = {
   green: "Tema: Verde-consultório",
 };
 
-export function ThemeToggle() {
-  // Começa como "saude" (o padrão) até ler o valor real salvo no
-  // navegador — evita divergência entre o HTML do servidor e do cliente.
-  const [palette, setPalette] = useState<PaletteName>("saude");
+function applyPalette(next: PaletteName) {
+  const root = document.documentElement;
+  if (next === "saude") {
+    root.removeAttribute("data-palette");
+    return;
+  }
+  root.setAttribute("data-palette", next);
+}
 
-  useEffect(() => {
+export function ThemeToggle() {
+  const [palette, setPalette] = useState<PaletteName>(() => {
+    if (typeof window === "undefined") return "saude";
+
     const stored = localStorage.getItem(STORAGE_KEY) as PaletteName | null;
-    if (stored && ORDER.includes(stored)) setPalette(stored);
-  }, []);
+    const initial = stored && ORDER.includes(stored) ? stored : "saude";
+    applyPalette(initial);
+    return initial;
+  });
 
   function cycle() {
     const next = ORDER[(ORDER.indexOf(palette) + 1) % ORDER.length];
     setPalette(next);
     localStorage.setItem(STORAGE_KEY, next);
-    // "saude" é o padrão embutido no :root — não precisa do atributo,
-    // então tiramos ele pra manter o HTML limpo (mesma lógica do
-    // script anti-flash em src/app/layout.tsx).
-    if (next === "saude") {
-      document.documentElement.removeAttribute("data-palette");
-    } else {
-      document.documentElement.setAttribute("data-palette", next);
-    }
+    applyPalette(next);
   }
 
   return (

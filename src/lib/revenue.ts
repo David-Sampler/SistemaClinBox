@@ -21,6 +21,7 @@ export type RevenueEntry = {
   items?: { name: string; quantity: number; unitPrice: number; subtotal: number }[];
   method: string;
   status: "pago" | "pendente" | "cancelada";
+  flow?: "entrada" | "saida";
   total: number;
   createdAt: string;
 };
@@ -77,6 +78,7 @@ export async function getCombinedRevenue({
   const saleEntries: RevenueEntry[] = sales.map((s) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const patient = s.patient as any;
+    const normalizedTotal = s.flow === "saida" ? -Math.abs(s.total) : s.total;
     return {
       _id: String(s._id),
       kind: "sale",
@@ -86,7 +88,8 @@ export async function getCombinedRevenue({
       items: s.items.map((i) => ({ name: i.name, quantity: i.quantity, unitPrice: i.unitPrice, subtotal: i.subtotal })),
       method: s.method,
       status: s.status === "cancelada" ? "cancelada" : s.status === "pendente" ? "pendente" : "pago",
-      total: s.total,
+      flow: s.flow ?? "entrada",
+      total: normalizedTotal,
       createdAt: (s.createdAt as Date).toISOString(),
     };
   });

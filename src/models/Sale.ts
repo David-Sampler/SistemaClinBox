@@ -6,6 +6,9 @@ import { Schema, model, models, Model, Types } from "mongoose";
 import type { PaymentMethod } from "./Payment";
 
 export type SaleItemType = "service" | "product";
+// "entrada" = venda que gera receita; "saida" = movimento de custo/dispesa
+// da clínica (ex.: aluguel de sala), mas continua sendo um registro de venda.
+export type SaleFlow = "entrada" | "saida";
 // "cancelada" = venda estornada — fica no histórico (não some, pra manter
 // o registro contábil de que existiu e foi desfeita), mas some dos
 // totais de "Recebido"/"A receber" e, se tinha produto, devolve pro estoque.
@@ -25,6 +28,7 @@ export interface ISale {
   patient?: Types.ObjectId; // venda pode ser de um paciente cadastrado, ou avulsa (balcão)
   items: ISaleItem[];
   total: number;
+  flow: SaleFlow;
   method: PaymentMethod;
   status: SaleStatus;
   createdBy: Types.ObjectId;
@@ -49,6 +53,7 @@ const SaleSchema = new Schema<ISale>(
     patient: { type: Schema.Types.ObjectId, ref: "Patient" },
     items: { type: [SaleItemSchema], required: true, validate: (v: ISaleItem[]) => v.length > 0 },
     total: { type: Number, required: true, min: 0 },
+    flow: { type: String, enum: ["entrada", "saida"], default: "entrada" },
     method: {
       type: String,
       enum: ["dinheiro", "cartao_credito", "cartao_debito", "pix", "boleto", "convenio"],

@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
     patient: parsed.data.patient,
     items,
     total,
+    flow: parsed.data.flow ?? "entrada",
     method: parsed.data.method,
     status: parsed.data.status ?? "pago",
     createdBy: session!.user.id,

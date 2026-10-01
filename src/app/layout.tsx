@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import Script from "next/script";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -52,9 +53,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-porcelain text-ink">
-        {/* Script inline simples e compatível com a renderização do App Router:
-            aplica o tema antes da página pintar sem depender do wrapper do Next. */}
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* "beforeInteractive" garante que isso rode antes da página
+            pintar — é a forma que o Next.js recomenda para esse tipo
+            de script (evitar flash de tema errado). */}
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         {/* Tela de abertura: puro CSS (ver .splash-screen em globals.css),
             some sozinha depois de um instante — não precisa de JS nem
             de estado React, então nunca atrasa a página de verdade. */}

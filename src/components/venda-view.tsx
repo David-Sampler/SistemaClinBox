@@ -78,6 +78,11 @@ const methodLabels: Record<string, string> = {
   convenio: "Convênio",
 };
 
+const flowLabels: Record<"entrada" | "saida", string> = {
+  entrada: "Entrada",
+  saida: "Saída",
+};
+
 const saleStatusStyles: Record<RevenueEntry["status"], string> = {
   pago: "bg-success-soft text-success",
   pendente: "bg-warning-soft text-warning",
@@ -276,6 +281,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
     const form = new FormData(e.currentTarget);
     const payload = {
       patient: form.get("patient") || undefined,
+      flow: form.get("flow") || "entrada",
       method: form.get("method"),
       status: form.get("status"),
       items: cart.map((l) => ({
@@ -517,9 +523,9 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-ink-muted mb-1">Forma de pagamento</label>
-                <select name="method" required className="input">
-                  {Object.entries(methodLabels).map(([value, label]) => (
+                <label className="block text-xs font-medium text-ink-muted mb-1">Fluxo</label>
+                <select name="flow" className="input" defaultValue="entrada">
+                  {Object.entries(flowLabels).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
                     </option>
@@ -533,6 +539,17 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                   <option value="pendente">Pendente</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-ink-muted mb-1">Forma de pagamento</label>
+              <select name="method" required className="input">
+                {Object.entries(methodLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -631,11 +648,18 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                         {new Date(s.createdAt).toLocaleDateString("pt-BR")}
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${saleStatusStyles[s.status]}`}>
-                          {saleStatusLabels[s.status]}
-                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${saleStatusStyles[s.status]}`}>
+                            {saleStatusLabels[s.status]}
+                          </span>
+                          {s.kind === "sale" && (
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${s.flow === "saida" ? "bg-warning-soft text-warning" : "bg-success-soft text-success"}`}>
+                              {s.flow === "saida" ? "Saída" : "Entrada"}
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-5 py-3 text-right font-medium text-ink tabular whitespace-nowrap">
+                      <td className={`px-5 py-3 text-right font-medium tabular whitespace-nowrap ${s.total < 0 ? "text-danger" : "text-ink"}`}>
                         {currency(s.total)}
                       </td>
                       <td className="px-5 py-3 text-right">

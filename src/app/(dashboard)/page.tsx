@@ -9,6 +9,7 @@ import { connectDB } from "@/lib/db";
 import { Patient } from "@/models/Patient";
 import { Appointment } from "@/models/Appointment";
 import { Payment } from "@/models/Payment";
+import { Sale } from "@/models/Sale";
 import { getCombinedRevenue } from "@/lib/revenue";
 import {
   Users,
@@ -101,6 +102,8 @@ async function getDashboardData() {
     patientsWithBirthday,
     clinicSettings,
     recentSales,
+    salesByMonth,
+    topServices,
   ] =
     await Promise.all([
       Patient.countDocuments({ active: true }),
@@ -141,10 +144,54 @@ async function getDashboardData() {
       // este mês" logo acima na mesma coluna, em vez de mostrar as N
       // mais recentes de qualquer época.
       getCombinedRevenue({ from: startOfMonth, limit: 6 }),
+      Sale.aggregate([
+        {
+          $match: {
+            status: { $ne: "cancelada" },
+            createdAt: { $gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) },
+          },
+        },
+        {
+          $group: {
+            _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+            total: { $sum: "$total" },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]),
+      Sale.aggregate([
+        {
+          $match: { status: { $ne: "cancelada" }, createdAt: { $gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) } },
+        },
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: "$items.name",
+            total: { $sum: "$items.subtotal" },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { total: -1 } },
+        { $limit: 5 },
+      ]),
     ]);
 
   const pendingTotal = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
   const receivedTotal = receivedThisMonth[0]?.total ?? 0;
+
+  const monthlySales = salesByMonth.map((entry) => {
+    const month = new Date(entry._id.year, entry._id.month - 1, 1);
+    return {
+      label: month.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
+      total: entry.total,
+    };
+  });
+
+  const maxMonthlySales = monthlySales.reduce((max, item) => Math.max(max, item.total), 0) || 1;
+  const bestMonth = monthlySales.reduce(
+    (best, item) => (item.total > best.total ? item : best),
+    monthlySales[0] ?? { label: "—", total: 0 }
+  );
 
   // Mesmo critério do papel timbrado (ClinicLetterhead): "Minha Clínica"
   // é o valor padrão de quem nunca abriu Configurações — nesse caso a
@@ -183,6 +230,10 @@ async function getDashboardData() {
     birthdaysThisWeek,
     clinicName,
     recentSales,
+    monthlySales,
+    bestMonth,
+    maxMonthlySales,
+    topServices,
   };
 }
 
@@ -200,6 +251,10 @@ export default async function DashboardHome() {
     birthdaysThisWeek,
     clinicName,
     recentSales,
+    monthlySales,
+    bestMonth,
+    maxMonthlySales,
+    topServices,
   } = await getDashboardData();
 
   const userName = session?.user?.name ?? "Usuário";
@@ -215,39 +270,53 @@ export default async function DashboardHome() {
   const quote = randomQuote();
 
   return (
-    <div className="space-y-8">
-      {/* Boas-vindas — a primeira coisa que a equipe vê ao entrar */}
-      <div className="fade-up relative overflow-hidden rounded-2xl bg-sidebar p-6 sm:p-8">
-        <div
-          aria-hidden
-          className="absolute -right-16 -top-20 w-72 h-72 rounded-full bg-blue-soft/20 blur-3xl"
-        />
-        <div
-          aria-hidden
-          className="absolute -left-10 bottom-0 w-56 h-56 rounded-full bg-brass/10 blur-3xl"
-        />
-        <div className="relative flex items-center gap-4">
-          {/* A versão do avatar fica ligada ao usuário atual para evitar
-              render impuro e também impedir cache cruzado entre contas. */}
-          <UserAvatar userId={userId} name={userName} size={56} tone="sidebar" version={userId || "guest"} className="ring-2 ring-white/15" />
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-sidebar-heading">
-              {greeting()}, {userName.split(" ")[0]}
-            </h1>
-            <p className="text-sidebar-text-muted text-sm capitalize">{todayLabel}</p>
+    <div className="space-y-5">
+      <div className="fade-up relative overflow-hidden rounded-[24px] border border-[#ece7e2] bg-[linear-gradient(135deg,#ffffff_0%,#f8f7f5_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.025)] sm:p-6">
+        <div aria-hidden className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#edf4ff] opacity-80 blur-3xl" />
+        <div aria-hidden className="absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-[#f4efe8] opacity-80 blur-3xl" />
+
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <UserAvatar
+              userId={userId}
+              name={userName}
+              size={56}
+              tone="sidebar"
+              version={userId || "guest"}
+              className="ring-2 ring-[#edf2f7]"
+            />
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">Painel da clínica</p>
+              <h1 className="mt-1 font-display text-3xl font-semibold text-ink">
+                {greeting()}, {userName.split(" ")[0]}!
+              </h1>
+              <p className="mt-1 text-sm capitalize text-ink-muted">{todayLabel}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-muted">
+            <span className="rounded-full border border-[#ece7e2] bg-white px-3 py-1.5">{todayAppointments.length} consultas hoje</span>
+            <span className="rounded-full border border-[#ece7e2] bg-white px-3 py-1.5">{pendingCount} pendências</span>
+            <span className="rounded-full border border-[#ece7e2] bg-white px-3 py-1.5">{currency(receivedTotal)} este mês</span>
           </div>
         </div>
-        {/* Frase motivacional — discreta, canto inferior, some em telas pequenas */}
-        <p className="relative hidden sm:block mt-6 text-xs text-sidebar-text-muted/70 italic">
-          {quote}
-        </p>
+
+        <div className="relative mt-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <p className="max-w-xl text-sm text-ink-muted/90 italic">{quote}</p>
+          {tomorrowCount > 0 && (
+            <Link
+              href="/agenda"
+              className="inline-flex items-center gap-2 rounded-full border border-[#e9e1d8] bg-white px-3 py-1.5 text-sm text-ink hover:bg-[#f5f7fa]"
+            >
+              Amanhã: {tomorrowCount} {tomorrowCount === 1 ? "consulta" : "consultas"}
+              <ArrowRight size={14} />
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Aviso discreto: consultas marcadas para amanhã — só um lembrete
-          pra equipe conferir a agenda com antecedência. Some quando não há
-          nada marcado. */}
       {tomorrowCount > 0 && (
-        <div className="fade-up flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm shadow-sm shadow-ink/[0.02]">
+        <div className="fade-up flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-sm shadow-sm shadow-ink/[0.02]">
           <CalendarClock size={16} className="shrink-0 text-blue" />
           <p className="flex-1 text-ink-muted">
             <span className="font-medium text-ink">Amanhã</span> há {tomorrowCount}{" "}
@@ -263,20 +332,16 @@ export default async function DashboardHome() {
         </div>
       )}
 
-      {/* Atalhos para as ações mais comuns do dia a dia */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <QuickAction href="/pacientes/novo" icon={UserPlus} label="Novo paciente" />
         <QuickAction href="/agenda?novo=1" icon={CalendarPlus} label="Novo agendamento" />
         <QuickAction href="/servicos" icon={Stethoscope} label="Catálogo de serviços" />
+        <QuickAction href="/financeiro" icon={Wallet} label="Financeiro" />
       </div>
 
-      {/* Cards com números resumidos. "Consultas hoje" foi trocado por
-          "Consultas atrasadas": o número de hoje já aparece por inteiro
-          na lista "Consultas de hoje" logo abaixo, então repetia a mesma
-          informação sem somar nada — atrasada não tinha contador em
-          lugar nenhum do painel. */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard icon={Users} label="Pacientes ativos" value={totalPatients} href="/pacientes" />
+        <SummaryCard icon={CalendarClock} label="Consultas hoje" value={todayAppointments.length} href="/agenda" />
         <SummaryCard
           icon={AlertTriangle}
           label="Consultas atrasadas"
@@ -294,106 +359,52 @@ export default async function DashboardHome() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-        {/* Lista das consultas de hoje */}
-        <div className="lg:col-span-2 bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
-          <div className="px-5 py-4 border-b border-line flex items-center justify-between">
-            <h2 className="font-semibold text-ink">Consultas de hoje</h2>
-            <Link
-              href="/agenda"
-              className="text-sm text-blue hover:text-blue-strong hover:underline flex items-center gap-1"
-            >
-              Ver agenda completa <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          {todayAppointments.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm text-ink-muted">
-              Nenhuma consulta marcada para hoje.
-            </p>
-          ) : (
-            <ul className="divide-y divide-line-soft">
-              {todayAppointments.map((appt) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const patient = appt.patient as any;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const dentist = appt.dentist as any;
-                return (
-                  <li key={String(appt._id)} className="px-5 py-3 flex items-center gap-3 text-sm">
-                    <PatientAvatar name={patient?.name ?? appt.patientName ?? "?"} size={32} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-ink truncate">{patient?.name ?? appt.patientName ?? "Paciente"}</p>
-                      <p className="text-ink-muted truncate flex items-center gap-1.5">
-                        <span>com {dentist?.name ?? "—"}</span>
-                        {appt.procedure && <span className="text-ink-faint">• {appt.procedure}</span>}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-ink tabular">
-                        {new Date(appt.start).toLocaleTimeString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      <StatusBadge
-                        status={appt.status}
-                        overdue={isAppointmentOverdue({ status: appt.status, end: appt.end as string | Date })}
-                      />
-                    </div>
-                    <WhatsAppLink phone={patient?.phone} size={14} />
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        {/* Coluna lateral: financeiro do mês (+ últimas vendas logo
-            embaixo, no mesmo card) e aniversariantes */}
-        <div className="space-y-4">
-          {/* Recebido este mês + últimas vendas, um do lado do outro no
-              mesmo card — junta venda de balcão (Sale) e cobrança lançada
-              na ficha do paciente (Payment). Ver src/lib/revenue.ts. Lista
-              propositalmente discreta (sem avatar, sem selo cheio — só a
-              cor do valor indica o status), já que mora numa coluna
-              estreita ao lado de "Consultas de hoje". */}
-          <div className="fade-up bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
-            <div className="px-5 py-4 border-b border-line flex items-end justify-between">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(290px,0.9fr)] xl:items-start">
+        <div className="min-w-0 xl:col-span-1 space-y-3">
+          <div className="overflow-hidden rounded-[20px] border border-[#ece8e3] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
+            <div className="flex items-center justify-between border-b border-[#f0ece8] px-4 py-3.5">
               <div>
-                <p className="text-ink-faint text-xs uppercase tracking-wide">Recebido este mês</p>
-                <p className="font-display text-2xl font-semibold text-success tabular mt-1">
-                  {currency(receivedTotal)}
-                </p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">Agenda do dia</p>
+                <h2 className="mt-1 text-[1.06rem] font-semibold text-ink">Consultas de hoje</h2>
               </div>
-              <Link
-                href="/vendas"
-                className="mb-0.5 shrink-0 text-xs text-blue hover:text-blue-strong hover:underline flex items-center gap-1"
-              >
-                Vendas <ArrowRight size={12} />
+              <Link href="/agenda" className="flex items-center gap-1 text-sm text-blue hover:text-blue-strong hover:underline">
+                Ver agenda completa <ArrowRight size={14} />
               </Link>
             </div>
 
-            <div className="px-5 pt-3 pb-1 flex items-center gap-1.5">
-              <ShoppingBag size={12} className="text-ink-faint" />
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Últimas vendas</p>
-            </div>
-
-            {recentSales.length === 0 ? (
-              <p className="px-5 pt-1 pb-4 text-sm text-ink-muted">Nenhuma venda neste mês ainda.</p>
+            {todayAppointments.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-ink-muted">Nenhuma consulta marcada para hoje.</p>
             ) : (
-              <ul className="pb-1">
-                {recentSales.map((s) => {
-                  const cancelled = s.status === "cancelada";
-                  const tone = cancelled ? "text-ink-faint" : s.status === "pago" ? "text-success" : "text-warning";
+              <ul className="divide-y divide-line-soft">
+                {todayAppointments.map((appt) => {
+                  const patient = appt.patient as { name?: string; phone?: string } | null | undefined;
+                  const dentist = appt.dentist as { name?: string } | null | undefined;
                   return (
-                    <li key={`${s.kind}:${s._id}`} className="px-5 py-1.5 flex items-center gap-2 text-sm">
-                      <div className={`min-w-0 flex-1 ${cancelled ? "opacity-60" : ""}`}>
-                        <p className={`text-ink truncate text-[13px] ${cancelled ? "line-through" : ""}`}>
-                          {s.patientName ?? "Venda avulsa"}
-                        </p>
-                        <p className="text-ink-faint text-xs truncate">{s.description}</p>
+                    <li key={String(appt._id)} className="flex flex-col gap-3 px-5 py-3.5 text-sm transition hover:bg-surface-soft/80 sm:min-h-[64px] sm:flex-row sm:items-center">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <PatientAvatar name={patient?.name ?? appt.patientName ?? "?"} size={38} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-ink">{patient?.name ?? appt.patientName ?? "Paciente"}</p>
+                          <p className="mt-0.5 flex items-center gap-1.5 truncate text-ink-muted">
+                            <span>com {dentist?.name ?? "—"}</span>
+                            {appt.procedure && <span className="text-ink-faint">• {appt.procedure}</span>}
+                          </p>
+                        </div>
                       </div>
-                      <p className={`tabular text-[13px] font-medium shrink-0 ${tone}`}>{currency(s.total)}</p>
+                      <div className="flex items-center justify-between gap-3 sm:justify-end">
+                        <p className="tabular text-ink">
+                          {new Date(appt.start).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        <div className="mt-0 sm:mt-1.5">
+                          <StatusBadge
+                            status={appt.status}
+                            overdue={isAppointmentOverdue({ status: appt.status, end: appt.end as string | Date })}
+                          />
+                        </div>
+                        <div className="shrink-0">
+                          <WhatsAppLink phone={patient?.phone} size={15} />
+                        </div>
+                      </div>
                     </li>
                   );
                 })}
@@ -401,28 +412,25 @@ export default async function DashboardHome() {
             )}
           </div>
 
-          <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
-            <div className="px-5 py-4 border-b border-line flex items-center gap-2">
+          <div className="overflow-hidden rounded-[22px] border border-[#ece8e3] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
+            <div className="flex items-center gap-2 border-b border-[#f0ece8] px-5 py-4">
               <Cake size={16} className="text-brass" />
-              <h2 className="font-semibold text-ink text-sm">Aniversários da semana</h2>
+              <h2 className="text-[0.96rem] font-semibold text-ink">Aniversários da semana</h2>
             </div>
             {birthdaysThisWeek.length === 0 ? (
-              <p className="px-5 py-6 text-center text-sm text-ink-muted">
-                Nenhum aniversário nos próximos dias.
-              </p>
+              <p className="px-5 py-6 text-center text-sm text-ink-muted">Nenhum aniversário nos próximos dias.</p>
             ) : (
               <ul className="divide-y divide-line-soft">
                 {birthdaysThisWeek.map((b, i) => (
-                  <li key={i} className="px-5 py-2.5 flex items-center justify-between gap-2 text-sm">
+                  <li key={i} className="flex items-center justify-between gap-2 px-5 py-2.5 text-sm">
                     <div className="min-w-0">
-                      <span className="text-ink truncate">{b.name}</span>
-                      <span className="block text-ink-faint text-xs">
+                      <span className="block truncate text-ink">{b.name}</span>
+                      <span className="block text-[11px] text-ink-faint">
                         {b.daysAway === 0 ? "Hoje" : b.daysAway === 1 ? "Amanhã" : `em ${b.daysAway} dias`}
                       </span>
                     </div>
                     {b.phone &&
                       (b.daysAway === 0 ? (
-                        // No dia: botão em destaque com o texto de parabéns.
                         <WhatsAppLink
                           phone={b.phone}
                           message={`Feliz aniversário, ${b.name.split(" ")[0]}! 🎉 Toda a equipe da ${clinicName} deseja um dia maravilhoso, cheio de saúde e sorrisos!`}
@@ -430,8 +438,6 @@ export default async function DashboardHome() {
                           className="shrink-0 !text-xs !py-1"
                         />
                       ) : (
-                        // Nos próximos dias: só o ícone, já com a mensagem
-                        // pronta pra quem quiser adiantar os parabéns.
                         <WhatsAppLink
                           phone={b.phone}
                           message={`Oi, ${b.name.split(" ")[0]}! Passando para desejar um feliz aniversário! 🎉 Toda a equipe da ${clinicName} deseja um dia maravilhoso, cheio de saúde e sorrisos!`}
@@ -444,6 +450,98 @@ export default async function DashboardHome() {
               </ul>
             )}
           </div>
+        </div>
+
+        <div className="min-w-0 space-y-4 xl:col-span-1">
+          <div className="h-full overflow-hidden rounded-[22px] border border-[#ece8e3] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
+            <div className="flex items-center justify-between gap-3 border-b border-[#f0ece8] px-4 py-3">
+              <div className="flex items-center gap-3 leading-none">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Financeiro</p>
+                <p className="font-display text-[2.05rem] font-semibold leading-none text-success tabular">{currency(receivedTotal)}</p>
+              </div>
+              <Link href="/vendas" className="inline-flex items-center gap-1 self-center text-[11px] text-blue hover:text-blue-strong hover:underline">
+                Vendas <ArrowRight size={12} />
+              </Link>
+            </div>
+
+            <div className="px-4 pb-2 pt-3">
+              <div className="mb-3 rounded-2xl border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <ShoppingBag size={12} className="text-ink-faint" />
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Vendas por mês</p>
+                  </div>
+                  <span className="text-[9px] font-medium text-ink-muted">Melhor: {bestMonth.label}</span>
+                </div>
+
+                <div className="flex h-24 items-end gap-2">
+                  {monthlySales.map((item) => {
+                    const height = Math.max(12, (item.total / maxMonthlySales) * 100);
+                    return (
+                      <div key={item.label} className="flex flex-1 flex-col items-center justify-end gap-1.5">
+                        <div className="flex h-20 w-full items-end justify-center">
+                          <div
+                            className={`w-full rounded-t-[10px] ${item.label === bestMonth.label ? "bg-[linear-gradient(180deg,#6ea8ff_0%,#2d7ae7_100%)]" : "bg-[#e7eefb]"}`}
+                            style={{ height: `${height}%` }}
+                          />
+                        </div>
+                        <span className="text-[9px] uppercase tracking-[0.12em] text-ink-faint">{item.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mb-3 rounded-2xl border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] p-3">
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Stethoscope size={12} className="text-ink-faint" />
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Procedimentos</p>
+                </div>
+
+                <ul className="space-y-2">
+                  {topServices.map((service, index) => (
+                    <li key={service._id} className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#edf4ff] text-[9px] font-semibold text-[#2d7ae7]">
+                          {index + 1}
+                        </span>
+                        <span className="truncate text-ink">{service._id}</span>
+                      </div>
+                      <span className="tabular text-ink-muted">{currency(service.total)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mb-2 flex items-center gap-1.5">
+                <ShoppingBag size={12} className="text-ink-faint" />
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Últimas vendas</p>
+              </div>
+
+              {recentSales.length === 0 ? (
+                <p className="py-3 text-sm text-ink-muted">Nenhuma venda neste mês ainda.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {recentSales.map((s) => {
+                    const cancelled = s.status === "cancelada";
+                    const tone = cancelled ? "text-ink-faint" : s.status === "pago" ? "text-success" : "text-warning";
+                    return (
+                      <li key={`${s.kind}:${s._id}`} className="flex items-center gap-2 rounded-xl bg-surface-soft/70 px-2.5 py-2 text-sm">
+                        <div className={`min-w-0 flex-1 ${cancelled ? "opacity-60" : ""}`}>
+                          <p className={`truncate text-[13px] text-ink ${cancelled ? "line-through" : ""}`}>
+                            {s.patientName ?? "Venda avulsa"}
+                          </p>
+                          <p className="truncate text-[11px] text-ink-faint">{s.description}</p>
+                        </div>
+                        <p className={`shrink-0 tabular text-[13px] font-medium ${tone}`}>{currency(s.total)}</p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -462,10 +560,10 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="card-hover fade-up flex items-center gap-3 bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] px-4 py-3.5 hover:border-blue/40"
+      className="card-hover fade-up flex items-center gap-3 rounded-[16px] border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] px-3.5 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.015)] transition-all hover:-translate-y-0.5 hover:border-[#dfe9f7]"
     >
-      <div className="w-9 h-9 shrink-0 rounded-lg bg-blue-soft text-blue flex items-center justify-center">
-        <Icon size={18} />
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#edf4ff] text-[#2d7ae7]">
+        <Icon size={17} />
       </div>
       <span className="text-sm font-medium text-ink">{label}</span>
     </Link>
@@ -493,17 +591,17 @@ function SummaryCard({
   return (
     <Link
       href={href}
-      className="card-hover fade-up bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-5 flex items-center gap-4 hover:border-blue/40"
+      className="card-hover fade-up flex items-center gap-3.5 rounded-[18px] border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] p-4 shadow-[0_10px_18px_rgba(15,23,42,0.02)] transition-all hover:-translate-y-0.5 hover:border-[#dfe9f7]"
     >
-      <div className={`w-11 h-11 shrink-0 rounded-lg ${iconTone} flex items-center justify-center`}>
-        <Icon size={22} />
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] ${iconTone}`}>
+        <Icon size={20} />
       </div>
       <div>
         <div className="flex items-baseline gap-2">
-          <p className="font-display text-2xl font-semibold text-ink tabular">{value}</p>
+          <p className="font-display text-[1.8rem] font-semibold leading-none text-ink tabular">{value}</p>
           {detail && <p className="text-xs text-ink-faint tabular">{detail}</p>}
         </div>
-        <p className="text-sm text-ink-muted">{label}</p>
+        <p className="mt-1 text-sm text-ink-muted">{label}</p>
       </div>
     </Link>
   );

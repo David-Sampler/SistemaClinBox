@@ -20,25 +20,36 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 10;
+
+  const loadPatients = async (q: string, currentPage: number) => {
+    setLoading(true);
+
+    const params = new URLSearchParams();
+    params.set("page", String(currentPage));
+    params.set("limit", String(pageSize));
+    if (q) params.set("q", q);
+
+    const res = await fetch(`/api/patients?${params.toString()}`);
+    const data = await res.json();
+    setPatients(data.patients ?? []);
+    setTotal(data.total ?? 0);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    // "debounce" simples: espera 300ms depois que o usuário para de digitar
-    // antes de buscar, para não disparar uma requisição a cada tecla.
     const timeout = setTimeout(() => {
-      loadPatients(search);
+      loadPatients(search, page);
     }, 300);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [search, page]);
 
-  async function loadPatients(q: string) {
-    setLoading(true);
-    const url = q ? `/api/patients?q=${encodeURIComponent(q)}` : "/api/patients";
-    const res = await fetch(url);
-    const data = await res.json();
-    setPatients(data.patients ?? []);
-    setLoading(false);
-  }
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const startItem = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endItem = Math.min(page * pageSize, total);
 
   return (
     <div className="space-y-6">
@@ -59,7 +70,10 @@ export default function PatientsPage() {
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           placeholder="Buscar por nome, CPF ou telefone..."
           className="w-full rounded-lg border border-line pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40"
         />
@@ -81,24 +95,54 @@ export default function PatientsPage() {
             )}
           </div>
         ) : (
-          <ul className="divide-y divide-line-soft">
-            {patients.map((p, i) => (
-              <li key={p._id} className="fade-up" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>
-                <Link
-                  href={`/pacientes/${p._id}`}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-surface-soft transition-colors"
+          <>
+            <ul className="divide-y divide-line-soft">
+              {patients.map((p, i) => (
+                <li key={p._id} className="fade-up" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>
+                  <Link
+                    href={`/pacientes/${p._id}`}
+                    className="flex items-center gap-3 px-5 py-3 hover:bg-surface-soft transition-colors"
+                  >
+                    <PatientAvatar name={p.name} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-ink truncate">{p.name}</p>
+                      <p className="text-sm text-ink-muted">{p.phone}</p>
+                    </div>
+                    {p.cpf && <span className="text-sm text-ink-faint shrink-0">{p.cpf}</span>}
+                    <WhatsAppLink phone={p.phone} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex items-center justify-between gap-3 border-t border-line-soft bg-surface-soft px-4 py-3 text-sm text-ink-muted">
+              <span>
+                Mostrando {startItem}-{endItem} de {total}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  disabled={page === 1}
+                  className="rounded-md border border-line bg-white px-3 py-1.5 text-sm text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 hover:bg-surface"
                 >
-                  <PatientAvatar name={p.name} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-ink truncate">{p.name}</p>
-                    <p className="text-sm text-ink-muted">{p.phone}</p>
-                  </div>
-                  {p.cpf && <span className="text-sm text-ink-faint shrink-0">{p.cpf}</span>}
-                  <WhatsAppLink phone={p.phone} />
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  Anterior
+                </button>
+                <span className="min-w-[72px] text-center text-xs font-medium uppercase tracking-[0.12em] text-ink-faint">
+                  {page}/{totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={page >= totalPages}
+                  className="rounded-md border border-line bg-white px-3 py-1.5 text-sm text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 hover:bg-surface"
+                >
+                  Próxima
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

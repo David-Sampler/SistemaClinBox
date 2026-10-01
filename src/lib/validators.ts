@@ -177,6 +177,7 @@ export const saleSchema = z.object({
   // lógica do "budget" em paymentSchema.
   patient: z.string().optional().transform((v) => v || undefined),
   items: z.array(saleItemSchema).min(1, "Adicione ao menos um item"),
+  flow: z.enum(["entrada", "saida"]).optional().default("entrada"),
   method: z.enum(["dinheiro", "cartao_credito", "cartao_debito", "pix", "boleto", "convenio"]),
   status: z.enum(["pago", "pendente"]).optional(),
 });
