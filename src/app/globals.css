@@ -221,6 +221,37 @@
   --sidebar-heading: #ffffff;
 }
 
+:root[data-palette="clinic"] .bg-white,
+:root[data-palette="clinic"] [class*="bg-white"],
+:root[data-palette="clinic"] [class*="bg-\[linear-gradient"],
+:root[data-palette="green"] .bg-white,
+:root[data-palette="green"] [class*="bg-white"],
+:root[data-palette="green"] [class*="bg-\[linear-gradient"],
+:root[data-palette="clinic"] body,
+:root[data-palette="green"] body {
+  background-color: var(--surface);
+  background-image: none;
+}
+
+:root[data-palette="clinic"] .text-ink,
+:root[data-palette="clinic"] .text-ink-muted,
+:root[data-palette="clinic"] .text-ink-faint,
+:root[data-palette="green"] .text-ink,
+:root[data-palette="green"] .text-ink-muted,
+:root[data-palette="green"] .text-ink-faint {
+  color: var(--ink);
+}
+
+:root[data-palette="clinic"] .text-ink-muted,
+:root[data-palette="green"] .text-ink-muted {
+  color: var(--ink-muted);
+}
+
+:root[data-palette="clinic"] .text-ink-faint,
+:root[data-palette="green"] .text-ink-faint {
+  color: var(--ink-faint);
+}
+
 body {
   background: var(--porcelain);
   color: var(--ink);
