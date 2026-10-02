@@ -137,7 +137,7 @@ export default function EquipePage() {
       {showForm && isAdmin && (
         <form
           onSubmit={handleSubmit}
-          className="bg-surface rounded-xl border border-line p-5 grid grid-cols-1 sm:grid-cols-2 gap-4"
+          className="bg-surface rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4"
         >
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">Nome</label>
@@ -181,7 +181,7 @@ export default function EquipePage() {
         </form>
       )}
 
-      <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
+      <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02]">
         {loading ? (
           <div className="p-4 space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -241,7 +241,7 @@ export default function EquipePage() {
       </div>
 
       {isAdmin && showInactive && (
-        <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
+        <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02]">
           <div className="px-5 py-3 border-b border-line-soft">
             <p className="text-sm font-medium text-ink">Usuários inativos</p>
             <p className="text-xs text-ink-muted">

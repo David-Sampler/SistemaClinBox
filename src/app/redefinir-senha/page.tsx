@@ -94,7 +94,7 @@ function ResetPasswordForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-lg border border-line bg-surface pl-10 pr-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
+              className="w-full rounded-lg bg-surface pl-10 pr-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
             />
           </div>
         </div>
@@ -112,7 +112,7 @@ function ResetPasswordForm() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-lg border border-line bg-surface pl-10 pr-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
+              className="w-full rounded-lg bg-surface pl-10 pr-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
             />
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
         <div className="mb-8 text-center">
           <span className="font-display text-2xl font-semibold text-blue-strong">ClinBox</span>
         </div>
-        <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-6">
+        <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02] p-6">
           {/* Suspense é necessário porque useSearchParams precisa de um "limite" de carregamento no Next.js. */}
           <Suspense>
             <ResetPasswordForm />

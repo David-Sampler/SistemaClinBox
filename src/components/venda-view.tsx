@@ -323,11 +323,11 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar serviço ou produto..."
-            className="w-full rounded-lg border border-line bg-surface pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40"
+            className="w-full rounded-lg bg-surface pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40"
           />
         </div>
 
-        <div className="flex items-center gap-1 bg-surface border border-line rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-surface rounded-lg p-1">
           {(["", "service", "product"] as const).map((t) => (
             <button
               key={t}
@@ -350,7 +350,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
             className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
               category === ""
                 ? "bg-ink text-porcelain border-ink"
-                : "bg-surface text-ink-muted border-line hover:border-blue/40"
+                : "bg-surface text-ink-muted border-line hover:shadow-[0_0_0_1px_var(--blue)]/40"
             }`}
           >
             Todas categorias
@@ -362,7 +362,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
               className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                 category === c
                   ? "bg-ink text-porcelain border-ink"
-                  : "bg-surface text-ink-muted border-line hover:border-blue/40"
+                  : "bg-surface text-ink-muted border-line hover:shadow-[0_0_0_1px_var(--blue)]/40"
               }`}
             >
               {c}
@@ -374,7 +374,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
         {/* Catálogo — grade de cartões clicáveis */}
         <div className="lg:col-span-3">
-          <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4 max-h-[560px] overflow-y-auto">
+          <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02] p-4 max-h-[560px] overflow-y-auto">
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -398,7 +398,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                       type="button"
                       disabled={outOfStock}
                       onClick={() => addToCart(item)}
-                      className="card-hover group text-left bg-surface border border-line rounded-xl p-3 flex flex-col gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="card-hover group text-left bg-surface rounded-xl p-3 flex flex-col gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bg} ${text}`}>
                         <Icon size={15} />
@@ -432,7 +432,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
         {/* Carrinho e finalização */}
         <form
           onSubmit={handleCheckout}
-          className="lg:col-span-2 bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-5 space-y-4 lg:sticky lg:top-4"
+          className="lg:col-span-2 bg-surface rounded-xl shadow-sm shadow-ink/[0.02] p-5 space-y-4 lg:sticky lg:top-4"
         >
           <div className="flex items-center gap-2">
             <ShoppingCart size={18} className="text-blue" />
@@ -476,7 +476,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                     <button
                       type="button"
                       onClick={() => changeQuantity(l.key, -1)}
-                      className="w-6 h-6 rounded-md border border-line flex items-center justify-center text-ink-muted hover:bg-surface-soft"
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-ink-muted hover:bg-surface-soft"
                     >
                       <Minus size={12} />
                     </button>
@@ -485,7 +485,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
                       type="button"
                       onClick={() => changeQuantity(l.key, 1)}
                       disabled={l.maxStock !== undefined && l.quantity >= l.maxStock}
-                      className="w-6 h-6 rounded-md border border-line flex items-center justify-center text-ink-muted hover:bg-surface-soft disabled:opacity-40"
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-ink-muted hover:bg-surface-soft disabled:opacity-40"
                     >
                       <Plus size={12} />
                     </button>
@@ -570,7 +570,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="font-semibold text-ink">Painel de vendas</h2>
-          <div className="flex items-center gap-1 bg-surface border border-line rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-surface rounded-lg p-1">
             {(["hoje", "semana", "mes"] as const).map((p) => (
               <button
                 key={p}
@@ -587,7 +587,7 @@ export function VendaView({ patients }: { patients: { id: string; name: string }
 
         <SalesStats sales={sales} loading={salesLoading} />
 
-        <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
+        <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02]">
           <div className="px-5 py-4 border-b border-line">
             <p className="text-sm font-semibold text-ink">Vendas — {PERIOD_LABELS[period].toLowerCase()}</p>
             <p className="text-xs text-ink-faint mt-0.5">
@@ -770,7 +770,7 @@ function StatCard({
   const toneClass =
     tone === "success" ? "text-success" : tone === "warning" ? "text-warning" : "text-ink";
   return (
-    <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4">
+    <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02] p-4">
       <p className="text-ink-faint text-xs uppercase tracking-wide">{label}</p>
       <p className={`font-display text-xl font-semibold tabular mt-1 ${toneClass}`}>{value}</p>
       <p className="text-xs text-ink-faint mt-0.5">{detail}</p>
@@ -821,7 +821,7 @@ function RevenueDetailModal({
             {entry.kind === "sale" ? "Itens" : "Descrição"}
           </p>
           {entry.items && entry.items.length > 0 ? (
-            <ul className="text-sm divide-y divide-line-soft border border-line-soft rounded-lg overflow-hidden">
+            <ul className="text-sm divide-y divide-line-soft rounded-lg overflow-hidden">
               {entry.items.map((i, idx) => (
                 <li key={idx} className="flex items-center justify-between px-3 py-2 bg-surface-soft">
                   <span className="text-ink-muted">

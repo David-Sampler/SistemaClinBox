@@ -120,7 +120,7 @@ function NewPatientForm() {
         <p className="text-ink-muted">Preencha os dados cadastrais — a anamnese é feita depois, na ficha do paciente</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-surface rounded-xl border border-line p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-surface rounded-xl p-6 space-y-6">
         <fieldset className="space-y-4">
           <legend className="font-semibold text-ink mb-1">Dados pessoais</legend>
 

@@ -39,7 +39,7 @@ function printAs(size: "a4" | "a5") {
 
 export function PrintButton() {
   return (
-    <div className="print:hidden fixed top-4 right-4 sm:top-6 sm:right-6 z-10 flex items-center gap-1 bg-surface border border-line rounded-lg p-1 shadow-lg">
+    <div className="print:hidden fixed top-4 right-4 sm:top-6 sm:right-6 z-10 flex items-center gap-1 bg-surface rounded-lg p-1 shadow-lg">
       <button onClick={() => printAs("a4")} className="btn-primary !py-1.5">
         <Printer size={15} /> A4
       </button>

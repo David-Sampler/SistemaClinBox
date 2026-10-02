@@ -268,7 +268,7 @@ export function PatientFinance({
         </div>
 
         {showBudgetForm && (
-          <form onSubmit={handleBudgetSubmit} className="bg-surface-soft border border-line rounded-xl p-5 sm:p-6 space-y-5">
+          <form onSubmit={handleBudgetSubmit} className="bg-surface-soft rounded-xl p-5 sm:p-6 space-y-5">
             <div className="max-w-sm">
               <label className="block text-xs font-medium text-ink-muted mb-1">Dentista responsável</label>
               <select name="dentist" required className="input">
@@ -405,7 +405,7 @@ export function PatientFinance({
                   </ul>
 
                   {b.notes && (
-                    <div className="mx-5 mb-5 mt-1 rounded-xl border border-line-soft bg-surface-soft px-4 py-3">
+                    <div className="mx-5 mb-5 mt-1 rounded-xl bg-surface-soft px-4 py-3">
                       <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                         <StickyNote size={13} className="shrink-0" />
                         Observações
@@ -437,7 +437,7 @@ export function PatientFinance({
         </div>
 
         {showPaymentForm && (
-          <form onSubmit={handlePaymentSubmit} className="bg-surface-soft border border-line rounded-xl p-5 sm:p-6 space-y-4">
+          <form onSubmit={handlePaymentSubmit} className="bg-surface-soft rounded-xl p-5 sm:p-6 space-y-4">
             <div>
               <label className="block text-xs font-medium text-ink-muted mb-1">Orçamento vinculado</label>
               <select name="budget" className="input" defaultValue="">
@@ -494,7 +494,7 @@ export function PatientFinance({
         {payments.length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhum pagamento cadastrado.</p>
         ) : (
-          <ul className="divide-y divide-line-soft border border-line rounded-xl overflow-hidden bg-surface">
+          <ul className="divide-y divide-line-soft rounded-xl overflow-hidden bg-surface">
             {payments.map((p) => {
               const budgetRef = typeof p.budget === "object" ? p.budget : undefined;
               const serviceLabel = budgetRef ? itemsSummary(budgetRef.items) : p.notes;

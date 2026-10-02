@@ -381,8 +381,8 @@ export function AgendaView({
   return (
     <div className="space-y-4">
       {/* Barra de navegação: período + alternador de visão + filtro + ação principal */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface/80 p-2 shadow-sm shadow-ink/[0.02] backdrop-blur-sm">
-        <div className="flex items-center gap-1 bg-surface-soft border border-line rounded-lg p-1">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface/80 p-2 shadow-sm shadow-ink/[0.02] backdrop-blur-sm">
+        <div className="flex items-center gap-1 bg-surface-soft rounded-lg p-1">
           <button
             onClick={goPrev}
             className="w-8 h-8 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface transition-colors"
@@ -419,11 +419,11 @@ export function AgendaView({
             setFollowingToday(false);
             setDate(e.target.value);
           }}
-          className="rounded-md border border-line bg-surface-soft px-2.5 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 cursor-pointer"
+          className="rounded-md bg-surface-soft px-2.5 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 cursor-pointer"
         />
 
         {/* Alternador Dia / Semana */}
-        <div className="flex items-center gap-1 bg-surface-soft border border-line rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-surface-soft rounded-lg p-1">
           {(["day", "week"] as View[]).map((v) => (
             <button
               key={v}
@@ -441,7 +441,7 @@ export function AgendaView({
           <select
             value={dentistFilter}
             onChange={(e) => setDentistFilter(e.target.value)}
-            className="rounded-lg border border-line bg-surface-soft px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+            className="rounded-lg bg-surface-soft px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
           >
             <option value="">Todos os dentistas</option>
             {dentists.map((d) => (
@@ -464,7 +464,7 @@ export function AgendaView({
         {TYPE_OPTIONS.map((t) => (
           <span
             key={t.value}
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-soft px-2 py-1 text-[11px] font-medium text-ink-muted"
+            className="inline-flex items-center gap-1.5 rounded-full bg-surface-soft px-2 py-1 text-[11px] font-medium text-ink-muted"
           >
             <span className={`w-2 h-2 rounded-full shrink-0 ${TYPE_DOT_COLORS[t.value]}`} />
             {t.label}
@@ -473,7 +473,7 @@ export function AgendaView({
       </div>
 
       {/* Grade de horários */}
-      <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] overflow-hidden">
+      <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02] overflow-hidden">
         {dentists.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-ink-muted">
             Nenhum dentista cadastrado ainda. Cadastre um em{" "}
@@ -611,7 +611,7 @@ export function AgendaView({
       {showForm && (
         <Modal onClose={() => setShowForm(false)} title="Novo agendamento">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="rounded-xl border border-line bg-surface-soft/40 p-3">
+            <div className="rounded-xl bg-surface-soft/40 p-3">
               <PatientField patients={patients} />
             </div>
             <Field label="Dentista">
@@ -619,7 +619,7 @@ export function AgendaView({
                 name="dentist"
                 required
                 defaultValue={formDentist || dentistFilter}
-                className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
               >
                 <option value="">Selecione...</option>
                 {dentists.map((d) => (
@@ -636,7 +636,7 @@ export function AgendaView({
                   type="date"
                   required
                   defaultValue={formDate}
-                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                  className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                 />
               </Field>
               <Field label="Horário">
@@ -645,7 +645,7 @@ export function AgendaView({
                   type="time"
                   required
                   defaultValue={formTime}
-                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                  className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                 />
               </Field>
             </div>
@@ -655,7 +655,7 @@ export function AgendaView({
                   name="type"
                   required
                   defaultValue="avaliacao"
-                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                  className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                 >
                   {TYPE_OPTIONS.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -671,7 +671,7 @@ export function AgendaView({
                   min={10}
                   step={5}
                   defaultValue={30}
-                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                  className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                 />
               </Field>
             </div>
@@ -679,7 +679,7 @@ export function AgendaView({
               <textarea
                 name="procedure"
                 rows={3}
-                className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 resize-none"
+                className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 resize-none"
                 placeholder="Detalhe o que será feito nessa consulta..."
               />
             </Field>
@@ -696,7 +696,7 @@ export function AgendaView({
       {/* Painel lateral: detalhe/status de uma consulta selecionada */}
       {selected && (
         <SidePanel onClose={() => setSelected(null)}>
-          <div className="mb-4 rounded-2xl border border-line bg-surface-soft/50 p-3">
+          <div className="mb-4 rounded-2xl bg-surface-soft/50 p-3">
             <p className="text-[10px] uppercase tracking-[0.16em] text-ink-faint mb-2">Consulta</p>
             <div className="flex items-center gap-3">
               <PatientAvatar name={selected.patient?.name ?? selected.patientName ?? "?"} size={40} />
@@ -732,7 +732,7 @@ export function AgendaView({
                   name="dentist"
                   required
                   defaultValue={selected.dentist?._id ?? ""}
-                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                  className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                 >
                   <option value="">Selecione...</option>
                   {dentists.map((d) => (
@@ -749,7 +749,7 @@ export function AgendaView({
                     type="date"
                     required
                     defaultValue={format(new Date(selected.start), "yyyy-MM-dd")}
-                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                    className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                   />
                 </Field>
                 <Field label="Horário">
@@ -758,7 +758,7 @@ export function AgendaView({
                     type="time"
                     required
                     defaultValue={format(new Date(selected.start), "HH:mm")}
-                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                    className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                   />
                 </Field>
               </div>
@@ -768,7 +768,7 @@ export function AgendaView({
                     name="type"
                     required
                     defaultValue={selected.type || "avaliacao"}
-                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                    className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                   >
                     {TYPE_OPTIONS.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -786,7 +786,7 @@ export function AgendaView({
                     defaultValue={Math.round(
                       (new Date(selected.end).getTime() - new Date(selected.start).getTime()) / 60000
                     )}
-                    className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+                    className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
                   />
                 </Field>
               </div>
@@ -795,7 +795,7 @@ export function AgendaView({
                   name="procedure"
                   rows={3}
                   defaultValue={selected.procedure}
-                  className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 resize-none"
+                  className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20 resize-none"
                 />
               </Field>
 
@@ -811,7 +811,7 @@ export function AgendaView({
               </div>
             </form>
           ) : (
-            <dl className="space-y-3 text-sm mb-6 rounded-2xl border border-line bg-surface-soft/40 p-3">
+            <dl className="space-y-3 text-sm mb-6 rounded-2xl bg-surface-soft/40 p-3">
               {selected.patient?.phone && (
                 <div className="flex justify-between gap-3">
                   <dt className="text-ink-muted">Telefone</dt>
@@ -901,7 +901,7 @@ export function AgendaView({
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                       selected.status === s.value
                         ? "bg-blue text-white border-blue"
-                        : "bg-surface text-ink-muted border-line hover:border-blue/40"
+                        : "bg-surface text-ink-muted border-line hover:shadow-[0_0_0_1px_var(--blue)]/40"
                     }`}
                   >
                     {s.label}
@@ -1052,7 +1052,7 @@ function AppointmentBlock({
           </p>
         )}
         {appt.procedure && (
-          <div className={`inline-flex w-fit items-center rounded-full border border-current/10 bg-white/10 px-1.5 py-0.5 font-semibold uppercase tracking-[0.08em] opacity-90 ${compact ? "text-[8.5px]" : "text-[9.5px]"}`}>
+          <div className={`inline-flex w-fit items-center rounded-full border border-current/10 bg-current/10 px-1.5 py-0.5 font-semibold uppercase tracking-[0.08em] opacity-90 ${compact ? "text-[8.5px]" : "text-[9.5px]"}`}>
             Procedimento
           </div>
         )}
@@ -1110,7 +1110,7 @@ function PatientField({
     <div>
       <div className="flex items-center justify-between mb-1.5 gap-2">
         <label className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Paciente</label>
-        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+        <div className="inline-flex rounded-lg bg-surface p-0.5">
           <button
             type="button"
             onClick={() => setMode("existing")}
@@ -1136,14 +1136,14 @@ function PatientField({
           name="patientName"
           defaultValue={defaultPatientName}
           placeholder="Nome do paciente"
-          className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+          className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
         />
       ) : (
         <select
           name="patient"
           required
           defaultValue={defaultPatientId ?? ""}
-          className="input w-full rounded-lg border border-line bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
+          className="input w-full rounded-lg bg-surface-soft px-3 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-blue/20"
         >
           <option value="">Selecione...</option>
           {patients.map((p) => (

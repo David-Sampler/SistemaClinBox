@@ -44,7 +44,7 @@ export function PermissionsPanel() {
   }
 
   return (
-    <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
+    <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02]">
       <div className="px-5 py-4 border-b border-line flex items-start gap-2">
         <ShieldCheck size={16} className="text-blue mt-0.5 shrink-0" />
         <div>
@@ -87,7 +87,7 @@ export function PermissionsPanel() {
                         }`}
                       >
                         <span
-                          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                          className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-surface shadow transition-transform ${
                             checked ? "translate-x-4" : ""
                           }`}
                         />

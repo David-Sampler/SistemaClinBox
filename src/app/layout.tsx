@@ -37,8 +37,59 @@ export const viewport: Viewport = {
 // de segundo antes do React assumir (é por isso que não é um useEffect).
 const themeInitScript = `
   try {
-    var p = localStorage.getItem("clinbox-palette");
-    if (p === "clinic" || p === "green") document.documentElement.setAttribute("data-palette", p);
+    const p = localStorage.getItem("clinbox-palette");
+    const tokens = {
+      saude: {
+        '--porcelain': '#0a151c',
+        '--page-bg-top': '#16262f',
+        '--page-bg-bottom': '#0a141a',
+        '--surface': '#162936',
+        '--surface-soft': '#1c313f',
+        '--ink': '#eef3f6',
+        '--ink-muted': '#9db0bb',
+        '--ink-faint': '#677b86',
+        '--line': '#25404f',
+      },
+      clinic: {
+        '--porcelain': '#f3f1fb',
+        '--page-bg-top': '#ffffff',
+        '--page-bg-bottom': '#f1eefa',
+        '--surface': '#ffffff',
+        '--surface-soft': '#f4f1fb',
+        '--ink': '#221c3b',
+        '--ink-muted': '#8886a1',
+        '--ink-faint': '#b7b4c9',
+        '--line': '#ebe7f7',
+      },
+      green: {
+        '--porcelain': '#0b0b0d',
+        '--page-bg-top': '#121214',
+        '--page-bg-bottom': '#0b0b0d',
+        '--surface': '#19191c',
+        '--surface-soft': '#222226',
+        '--ink': '#f5f5f3',
+        '--ink-muted': '#a8a8ae',
+        '--ink-faint': '#6e6e74',
+        '--line': '#2c2c31',
+      },
+    };
+    const active = p && tokens[p] ? p : 'saude';
+    const root = document.documentElement;
+    const body = document.body;
+    Object.entries(tokens[active]).forEach(([name, value]) => {
+      root.style.setProperty(name, value);
+    });
+    if (active === 'saude') {
+      root.removeAttribute('data-palette');
+      body.style.background = 'linear-gradient(180deg, #16262f 0%, #0a141a 100%)';
+      body.style.backgroundColor = '#0a141a';
+      body.style.color = tokens.saude['--ink'];
+    } else {
+      root.setAttribute('data-palette', active);
+      body.style.background = 'linear-gradient(180deg, ' + tokens[active]['--page-bg-top'] + ' 0%, ' + tokens[active]['--page-bg-bottom'] + ' 100%)';
+      body.style.backgroundColor = tokens[active]['--porcelain'];
+      body.style.color = tokens[active]['--ink'];
+    }
   } catch (e) {}
 `;
 

@@ -2,44 +2,42 @@
 
 /* ============================================================
    SISTEMA DE DESIGN DO CLINBOX
-   Paleta: "azul-saúde" — um azul confiável e suave como cor de
-   marca (o mesmo tipo de tom usado por apps de saúde modernos),
-   em vez de verde-clínico ou azul genérico de dashboard. Neutros
-   levemente azulados, dourado quente como destaque pontual.
+   Três temas trocáveis pelo seletor (ver ThemeToggle): "Dark" (padrão,
+   navy escuro #162936 escolhido pelo usuário), "Clínica clara"
+   (branco, destaque Frog/Bangladesh Green) e "Verde noturno" (verde
+   escuro saturado, paleta de marca).
    ============================================================ */
 
 :root {
-  /* Sem isso, controles NATIVOS do navegador (select, checkbox,
-     scrollbar) seguem o modo claro/escuro do SISTEMA OPERACIONAL,
-     independente do tema escolhido aqui dentro — dava pra ficar com o
-     app inteiro no tema claro e mesmo assim o menuzinho de um <select>
-     abrir com fundo escuro (Mac/Windows no modo escuro), parecendo
-     quebrado. Isso também se repete nos blocos de tema escuro mais abaixo. */
-  color-scheme: light;
+  /* Neste sistema, o visual base do app fica em dark profissional, com
+     fundos escuros e texto claro — mais parecido com dashboards de
+     produtividade e sistemas B2B modernos. */
+  color-scheme: dark;
 
-  /* Superfícies — cinza neutro bem suave, com o mínimo de tinta
-     azulada: fica leve numa tela de trabalho o dia inteiro. */
-  --porcelain: #f6f8fb;      /* fundo da página */
-  --surface: #ffffff;        /* cartões */
-  --surface-soft: #f0f4f9;   /* painéis recuados, formulários */
+  --porcelain: #0a151c;      /* fundo da página */
+  --page-bg-top: #16262f;
+  --page-bg-bottom: #0a141a;
+  --surface: #162936;         /* cartões — cor escolhida pelo usuário */
+  --surface-soft: #1c313f;     /* painéis recuados, formulários */
 
   /* Texto */
-  --ink: #1a2532;            /* texto principal (preto azulado, não puro) */
-  --ink-muted: #5f6f80;      /* texto secundário */
-  --ink-faint: #98a6b5;      /* placeholders, rótulos discretos */
+  --ink: #eef3f6;             /* texto principal */
+  --ink-muted: #9db0bb;       /* texto secundário */
+  --ink-faint: #677b86;       /* placeholders, rótulos discretos */
 
   /* Linhas */
-  --line: #e0e6ee;
-  --line-soft: #edf1f6;
+  --line: #25404f;
+  --line-soft: #1b2e3a;
 
-  /* Marca: azul-saúde — confiável e suave, sem ser frio */
-  --blue: #3a7dd6;
-  --blue-strong: #2a5fac;
-  --blue-soft: #e3edfa;
+  /* Marca: azul-aço, derivado do mesmo navy da superfície (não é uma
+     cor nova/importada — é o #162936 clareado para servir de destaque). */
+  --blue: #3f87a6;
+  --blue-strong: #56a7c4;
+  --blue-soft: rgba(63, 135, 166, 0.18);
 
-  /* Destaque secundário: bronze (usar com moderação) */
-  --brass: #a8763a;
-  --brass-soft: #f3e8d3;
+  /* Destaque secundário: tom neutro da mesma família (usar com moderação) */
+  --brass: #a9bdc7;
+  --brass-soft: #243d4c;
 
   /* Semântico (status) — independente da cor de marca */
   --success: #2e8b57;
@@ -50,19 +48,20 @@
   --danger-soft: #f6dedb;
   --neutral-soft: #edf0f3;
 
-  /* Barra lateral: sempre escura, azul-marinho (identidade de marca
-     fixa, não muda com o tema claro/escuro do visitante) */
-  --sidebar-bg: #122236;
-  --sidebar-active: #1c3350;
-  --sidebar-text: #d3ddea;
-  --sidebar-text-muted: #7c8ba0;
-  --sidebar-active-text: #8ab4f0;
-  --sidebar-line: rgba(255, 255, 255, 0.1);
+  /* Barra lateral: sempre escura, navy mais profundo que o cartão
+     (identidade fixa deste tema, não muda com o tema claro/escuro do
+     visitante) */
+  --sidebar-bg: #0e1c25;
+  --sidebar-active: #1f3646;
+  --sidebar-text: #c7d4da;
+  --sidebar-text-muted: #76858d;
+  --sidebar-active-text: #eef3f6;
+  --sidebar-line: rgba(255, 255, 255, 0.08);
   --sidebar-hover: rgba(255, 255, 255, 0.05);
   /* Cor de maior contraste possível sobre a barra lateral — usada nos
      textos "principais" dela (título, frase de destaque do login).
-     Escura ("clínica moderna") ou clara ("azul-saúde"), sempre a mais
-     forte disponível pra aquele fundo. */
+     Sempre a mais forte disponível pra aquele fundo (nos três temas,
+     a barra lateral é escura/colorida, então isso fica branco). */
   --sidebar-heading: #ffffff;
 
   /* Paleta do ODONTOGRAMA: 4 tons extras, coordenados com o resto da
@@ -132,74 +131,87 @@
 }
 
 /* ============================================================
-   SEGUNDO TEMA: "Clínica Moderna" — visual mais claro e colorido,
-   barra lateral branca (em vez de escura) com um destaque violeta
-   suave. Escolhido pelo usuário no seletor de tema (ver ThemeToggle).
-   Troca só os tokens de cor — o resto do sistema (componentes,
-   espaçamento, tipografia) continua exatamente igual.
+   SEGUNDO TEMA: "Clínica Clara" — fundo branco/lavanda muito claro,
+   com uma barra lateral roxa vibrante como destaque de marca (em vez
+   de branca) — referência: dashboards tipo MyCloud. Escolhido pelo
+   usuário no seletor de tema (ver ThemeToggle). Troca só os tokens de
+   cor — o resto do sistema (componentes, espaçamento, tipografia)
+   continua exatamente igual.
    ============================================================ */
 :root[data-palette="clinic"] {
-  --porcelain: #fafafc;
+  color-scheme: light;
+
+  --porcelain: #f3f1fb;
+  --page-bg-top: #ffffff;
+  --page-bg-bottom: #f1eefa;
   --surface: #ffffff;
-  --surface-soft: #f5f4fb;
+  --surface-soft: #f4f1fb;
 
-  --ink: #24232e;
-  --ink-muted: #6b6a78;
-  --ink-faint: #a3a2ae;
+  --ink: #221c3b;
+  --ink-muted: #8886a1;
+  --ink-faint: #b7b4c9;
 
-  --line: #ebeaf3;
-  --line-soft: #f3f2f9;
+  --line: #ebe7f7;
+  --line-soft: #f2eefb;
 
-  --blue: #6c5ce0;
-  --blue-strong: #5344c4;
-  --blue-soft: #edeafc;
+  --blue: #6d45dd;
+  --blue-strong: #5934c4;
+  --blue-soft: rgba(109, 69, 221, 0.12);
 
-  --brass: #e08a4f;
-  --brass-soft: #fbead9;
+  --brass: #d6336c;
+  --brass-soft: #fbe4ec;
 
-  --success: #3fa772;
-  --success-soft: #e1f5ea;
-  --warning: #c08a1e;
-  --warning-soft: #fbf0d9;
-  --danger: #d65c56;
-  --danger-soft: #fbe4e2;
-  --neutral-soft: #f1f0f7;
+  --success: #1f9d6c;
+  --success-soft: #def5ea;
+  --warning: #a86a0c;
+  --warning-soft: #f5e6c8;
+  --danger: #c1443a;
+  --danger-soft: #f6dedb;
+  --neutral-soft: #f1eff7;
 
-  /* Aqui a barra lateral é CLARA, ao contrário do tema "Azul-saúde"
-     (onde ela é fixa e escura) — parte da identidade deste tema. */
-  --sidebar-bg: #ffffff;
-  --sidebar-active: #eeeafb;
-  --sidebar-text: #55545f;
-  --sidebar-text-muted: #9b9aa6;
-  --sidebar-active-text: #5f52c7;
-  --sidebar-line: #eeedf5;
-  --sidebar-hover: #f6f5fb;
-  --sidebar-heading: #24232e;
+  /* Aqui a barra lateral é ROXA (a cor de marca deste tema), ao
+     contrário dos outros dois temas (onde ela é neutra/escura). */
+  --sidebar-bg: #6d45dd;
+  --sidebar-active: #ffffff;
+  --sidebar-text: #d9cdf7;
+  --sidebar-text-muted: #a98ce8;
+  --sidebar-active-text: #6d45dd;
+  --sidebar-line: rgba(255, 255, 255, 0.15);
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-heading: #ffffff;
+}
+
+/* Leve degradê na barra lateral roxa (de cima pra baixo), em vez de
+   uma cor chapada — mesma referência visual (MyCloud). */
+:root[data-palette="clinic"] .bg-sidebar {
+  background: linear-gradient(180deg, #6d45dd 0%, #7a3fd1 100%);
 }
 
 /* ============================================================
-   TERCEIRO TEMA: "Verde-consultório" — o visual verde-clínico das
-   primeiras versões do sistema, mantido como uma terceira opção.
-   Barra lateral escura (verde-floresta) com destaque verde-teal.
+   TERCEIRO TEMA: "Verde Noturno" — cinza-chumbo quase preto com um
+   verde-limão neon como único destaque (referência: dashboards de
+   staking/cripto), em vez do verde saturado da paleta de marca.
    ============================================================ */
 :root[data-palette="green"] {
-  --porcelain: #f5f6f3;
-  --surface: #ffffff;
-  --surface-soft: #eef1ee;
+  --porcelain: #0b0b0d;
+  --page-bg-top: #121214;
+  --page-bg-bottom: #0b0b0d;
+  --surface: #19191c;
+  --surface-soft: #222226;
 
-  --ink: #172420;
-  --ink-muted: #5c6d67;
-  --ink-faint: #93a39d;
+  --ink: #f5f5f3;
+  --ink-muted: #a8a8ae;
+  --ink-faint: #6e6e74;
 
-  --line: #e1e6e2;
-  --line-soft: #ecefec;
+  --line: #2c2c31;
+  --line-soft: #202024;
 
-  --blue: #0f6b60;
-  --blue-strong: #0a4f47;
-  --blue-soft: #e3f0ec;
+  --blue: #c6f135;
+  --blue-strong: #d9ff5c;
+  --blue-soft: rgba(198, 241, 53, 0.16);
 
-  --brass: #a8763a;
-  --brass-soft: #f3e8d3;
+  --brass: #f0a830;
+  --brass-soft: #3a2e16;
 
   --success: #2e8b57;
   --success-soft: #dcefe3;
@@ -207,26 +219,43 @@
   --warning-soft: #f5e6c8;
   --danger: #c1443a;
   --danger-soft: #f6dedb;
-  --neutral-soft: #eef0ed;
+  --neutral-soft: #edf0f3;
 
-  /* Barra lateral escura, verde-floresta — igual à identidade "sempre
-     escura" do tema Azul-saúde, só que na paleta verde. */
-  --sidebar-bg: #163a30;
-  --sidebar-active: #1f4c40;
-  --sidebar-text: #d7e4e0;
-  --sidebar-text-muted: #82998f;
-  --sidebar-active-text: #8fdcc4;
-  --sidebar-line: rgba(255, 255, 255, 0.1);
+  /* Barra lateral escura — igual à identidade "sempre escura" do tema
+     padrão, só que quase preta, com o item ativo destacado em verde-limão. */
+  --sidebar-bg: #0e0e10;
+  --sidebar-active: #23270f;
+  --sidebar-text: #c7c7cc;
+  --sidebar-text-muted: #6e6e74;
+  --sidebar-active-text: #c6f135;
+  --sidebar-line: rgba(255, 255, 255, 0.08);
   --sidebar-hover: rgba(255, 255, 255, 0.05);
   --sidebar-heading: #ffffff;
 }
 
+/* O "Blue" deste tema é um verde-limão muito claro — texto branco (usado
+   por padrão em .btn-primary) ficaria com contraste ruim em cima dele.
+   O botão de login fica de fora (:not(.login-submit)): ele é navy fixo,
+   independente do tema, e já teria o texto branco certo de qualquer forma. */
+:root[data-palette="green"] .btn-primary:not(.login-submit) {
+  color: #0d0d0f;
+}
+
+/* Mesmo motivo: abas/filtros ativos em Serviços, Vendas e Financeiro
+   usam diretamente "bg-blue text-white" (em vez de .btn-primary) para
+   o estado selecionado — pega esse combo também. */
+:root[data-palette="green"] .bg-blue.text-white {
+  color: #0d0d0f;
+}
+
+:root[data-palette="clinic"] html,
 :root[data-palette="clinic"] body,
-:root[data-palette="green"] body,
 :root[data-palette="clinic"] main,
+:root[data-palette="green"] html,
+:root[data-palette="green"] body,
 :root[data-palette="green"] main {
-  background-color: var(--porcelain);
-  color: var(--ink);
+  background-color: var(--porcelain) !important;
+  color: var(--ink) !important;
 }
 
 :root[data-palette="clinic"] .bg-white,
@@ -241,15 +270,15 @@
 :root[data-palette="green"] [class*="bg-surface"],
 :root[data-palette="green"] .bg-porcelain,
 :root[data-palette="green"] [class*="bg-porcelain"] {
-  background-color: var(--surface);
-  background-image: none;
+  background-color: var(--surface) !important;
+  background-image: none !important;
 }
 
 :root[data-palette="clinic"] .bg-surface-soft,
 :root[data-palette="clinic"] [class*="bg-surface-soft"],
 :root[data-palette="green"] .bg-surface-soft,
 :root[data-palette="green"] [class*="bg-surface-soft"] {
-  background-color: var(--surface-soft);
+  background-color: var(--surface-soft) !important;
 }
 
 :root[data-palette="clinic"] .text-ink,
@@ -264,21 +293,21 @@
 :root[data-palette="green"] [class*="text-ink-muted"],
 :root[data-palette="green"] .text-ink-faint,
 :root[data-palette="green"] [class*="text-ink-faint"] {
-  color: var(--ink);
+  color: var(--ink) !important;
 }
 
 :root[data-palette="clinic"] .text-ink-muted,
 :root[data-palette="clinic"] [class*="text-ink-muted"],
 :root[data-palette="green"] .text-ink-muted,
 :root[data-palette="green"] [class*="text-ink-muted"] {
-  color: var(--ink-muted);
+  color: var(--ink-muted) !important;
 }
 
 :root[data-palette="clinic"] .text-ink-faint,
 :root[data-palette="clinic"] [class*="text-ink-faint"],
 :root[data-palette="green"] .text-ink-faint,
 :root[data-palette="green"] [class*="text-ink-faint"] {
-  color: var(--ink-faint);
+  color: var(--ink-faint) !important;
 }
 
 :root[data-palette="clinic"] .border-line,
@@ -289,14 +318,52 @@
 :root[data-palette="green"] [class*="border-line"],
 :root[data-palette="green"] .border-line-soft,
 :root[data-palette="green"] [class*="border-line-soft"] {
-  border-color: var(--line);
+  border-color: var(--line) !important;
+}
+
+html,
+body {
+  background: linear-gradient(180deg, var(--page-bg-top) 0%, var(--page-bg-bottom) 100%);
+  background-color: var(--porcelain);
+  color: var(--ink);
 }
 
 body {
-  background: var(--porcelain);
+  background: linear-gradient(180deg, var(--page-bg-top) 0%, var(--page-bg-bottom) 100%);
+  background-color: var(--porcelain) !important;
   color: var(--ink);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   scroll-behavior: smooth;
+}
+
+/* "Clínica Clara" é o único tema claro dos três — fundo branco com um
+   leve degradê lavanda, em vez do gradiente escuro padrão. Os temas
+   "saude" e "green" não entram aqui: ambos já são escuros via
+   --page-bg-top/bottom em :root. */
+html[data-palette="clinic"],
+html[data-palette="clinic"] body,
+html[data-palette="clinic"] main {
+  background: linear-gradient(180deg, #ffffff 0%, #f1eefa 100%) !important;
+  background-color: #f3f1fb !important;
+}
+
+html[data-palette="clinic"] body.bg-porcelain,
+html[data-palette="clinic"] body.bg-white,
+html[data-palette="clinic"] body.bg-surface,
+html[data-palette="clinic"] body.bg-surface-soft,
+html[data-palette="clinic"] .bg-porcelain,
+html[data-palette="clinic"] .bg-surface,
+html[data-palette="clinic"] .bg-surface-soft,
+html[data-palette="clinic"] .bg-white {
+  background-color: var(--surface) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.2)) !important;
+}
+
+html[data-palette="clinic"] body,
+html[data-palette="clinic"] main,
+html[data-palette="green"] body,
+html[data-palette="green"] main {
+  background-attachment: fixed;
 }
 
 /* Números alinhados em colunas (valores, datas, horários) */

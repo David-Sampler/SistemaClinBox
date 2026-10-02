@@ -40,7 +40,7 @@ export default function CatalogoPage() {
         <p className="text-ink-muted">Catálogo de procedimentos e itens que a clínica vende</p>
       </div>
 
-      <div className="flex items-center gap-1 bg-surface border border-line rounded-lg p-1 w-fit">
+      <div className="flex items-center gap-1 bg-surface rounded-lg p-1 w-fit">
         {(["servicos", "produtos"] as const).map((t) => (
           <button
             key={t}
@@ -83,7 +83,7 @@ function CatalogToolbar({
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Buscar por nome..."
-          className="w-full rounded-lg border border-line bg-surface pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40"
+          className="w-full rounded-lg bg-surface pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40"
         />
       </div>
 
@@ -93,7 +93,7 @@ function CatalogToolbar({
           className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
             activeCategory === ""
               ? "bg-blue text-white border-blue"
-              : "bg-surface text-ink-muted border-line hover:border-blue/40"
+              : "bg-surface text-ink-muted border-line hover:shadow-[0_0_0_1px_var(--blue)]/40"
           }`}
         >
           Todos
@@ -105,7 +105,7 @@ function CatalogToolbar({
             className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
               activeCategory === c
                 ? "bg-blue text-white border-blue"
-                : "bg-surface text-ink-muted border-line hover:border-blue/40"
+                : "bg-surface text-ink-muted border-line hover:shadow-[0_0_0_1px_var(--blue)]/40"
             }`}
           >
             {c}
@@ -209,7 +209,7 @@ function ServicosTab() {
       {showForm && canManage && (
         <form
           onSubmit={handleSubmit}
-          className="bg-surface-soft border border-line rounded-lg p-4 grid grid-cols-1 sm:grid-cols-3 gap-3"
+          className="bg-surface-soft rounded-lg p-4 grid grid-cols-1 sm:grid-cols-3 gap-3"
         >
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">Nome do serviço</label>
@@ -457,7 +457,7 @@ function ProdutosTab() {
       {showForm && canManage && (
         <form
           onSubmit={handleSubmit}
-          className="bg-surface-soft border border-line rounded-lg p-4 grid grid-cols-1 sm:grid-cols-4 gap-3"
+          className="bg-surface-soft rounded-lg p-4 grid grid-cols-1 sm:grid-cols-4 gap-3"
         >
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">Nome do produto</label>
@@ -631,7 +631,7 @@ function CatalogCard({
 
   return (
     <div
-      className="card-hover fade-up group relative bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4 flex flex-col gap-3"
+      className="card-hover fade-up group relative bg-surface rounded-xl shadow-sm shadow-ink/[0.02] p-4 flex flex-col gap-3"
       style={{ animationDelay: `${Math.min(index, 11) * 25}ms` }}
     >
       {(canManage || canDelete) && (
@@ -674,7 +674,7 @@ function CatalogCard({
 
 function EmptyCatalog({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
-    <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] px-5 py-14 text-center">
+    <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02] px-5 py-14 text-center">
       <Icon size={28} className="mx-auto text-ink-faint mb-2" />
       <p className="text-sm text-ink-muted">{text}</p>
     </div>
@@ -691,7 +691,7 @@ function MiniStat({
   tone?: "default" | "warning";
 }) {
   return (
-    <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] p-4 flex items-center gap-3">
+    <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02] p-4 flex items-center gap-3">
       <div
         className={`w-9 h-9 rounded-lg flex items-center justify-center ${
           tone === "warning" ? "bg-warning-soft text-warning" : "bg-blue-soft text-blue"

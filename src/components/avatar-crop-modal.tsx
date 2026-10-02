@@ -104,7 +104,7 @@ export function AvatarCropModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="anim-scale-in relative bg-surface rounded-xl border border-line shadow-xl w-full max-w-sm p-6">
+      <div className="anim-scale-in relative bg-surface rounded-xl shadow-xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-lg font-semibold text-ink">Ajustar foto</h2>
           <button onClick={onCancel} className="w-7 h-7 flex items-center justify-center rounded-md text-ink-muted hover:bg-surface-soft" aria-label="Cancelar">

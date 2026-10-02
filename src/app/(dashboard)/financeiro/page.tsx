@@ -338,8 +338,8 @@ export default function FinanceiroPage() {
   }
 
   return (
-    <div className="space-y-4 rounded-[24px] border border-[#f1eee9] bg-[#f8f7f5] p-3 md:p-4">
-      <div className="flex items-end justify-between gap-3 border-b border-[#eee8e3] pb-3">
+    <div className="space-y-4 rounded-[24px] bg-surface-soft p-3 md:p-4">
+      <div className="flex items-end justify-between gap-3 border-b border-line pb-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">Resumo</p>
           <h1 className="mt-1 font-display text-2xl font-semibold text-ink">Financeiro</h1>
@@ -351,22 +351,22 @@ export default function FinanceiroPage() {
             aria-label={showValues ? "Ocultar valores" : "Exibir valores"}
             title={showValues ? "Ocultar valores" : "Exibir valores"}
             onClick={() => setShowValues((prev) => !prev)}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[#ece7e2] bg-white text-ink-muted transition-colors hover:border-[#dfeafc] hover:text-[#1f3f6d]"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-ink-muted transition-colors hover:shadow-[0_0_0_1px_var(--blue)] hover:text-blue"
           >
             {showValues ? <Eye size={15} /> : <EyeOff size={15} />}
           </button>
-          <span className="rounded-full border border-[#ece7e2] bg-white px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted">
+          <span className="rounded-full bg-surface px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-ink-muted">
             Clínica
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-[18px] border border-[#ebeaf0] bg-white p-4 shadow-[0_6px_14px_rgba(15,23,42,0.02)]">
+        <div className="rounded-[18px] bg-surface p-4 shadow-[0_6px_14px_rgba(0,0,0,0.05)]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">Total a receber</p>
           <p className="mt-3 text-3xl font-semibold text-ink tabular">{displayAmount(totalPendente, showValues)}</p>
         </div>
-        <div className="rounded-[18px] border border-[#ebf0ea] bg-white p-4 shadow-[0_6px_14px_rgba(15,23,42,0.02)]">
+        <div className="rounded-[18px] bg-surface p-4 shadow-[0_6px_14px_rgba(0,0,0,0.05)]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">Orçamentos em espera</p>
           <p className="mt-3 text-3xl font-semibold text-ink tabular">
             {displayAmount(awaitingApproval.reduce((s, b) => s + b.total, 0), showValues)}
@@ -385,15 +385,15 @@ export default function FinanceiroPage() {
       )}
 
       <div className="flex flex-wrap items-center gap-3 pt-1">
-        <div className="inline-flex items-center gap-1 rounded-[18px] border border-[#ece7e2] bg-[#f5f2ef] p-1">
+        <div className="inline-flex items-center gap-1 rounded-[18px] bg-surface-soft p-1">
           {(["pagamentos", "orcamentos", "despesas"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`h-10 min-w-[128px] rounded-[12px] px-4 text-[0.92rem] font-medium tracking-[-0.01em] transition-all ${
                 tab === t
-                  ? "bg-white text-[#23487a] shadow-[0_4px_8px_rgba(15,23,42,0.04)] ring-1 ring-[#dfeafc]"
-                  : "text-[#5e6978] hover:bg-white/60"
+                  ? "bg-surface text-blue shadow-[0_4px_8px_rgba(0,0,0,0.08)] ring-1 ring-blue/30"
+                  : "text-ink-muted hover:bg-surface/60"
               }`}
             >
               {t === "pagamentos" ? "Pagamentos" : t === "orcamentos" ? "Orçamentos" : "Despesas"}
@@ -407,7 +407,7 @@ export default function FinanceiroPage() {
       )}
 
       {tab === "despesas" ? (
-        <div className="rounded-[18px] border border-[#efeae6] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f7_100%)] shadow-[0_8px_16px_rgba(15,23,42,0.02)]">
+        <div className="rounded-[18px] bg-surface shadow-[0_8px_16px_rgba(0,0,0,0.06)]">
           <div className="flex items-center justify-between border-b border-line bg-surface-soft/50 px-5 py-3 text-[11px] text-ink-faint">
             <span>Despesas da clínica</span>
             <span>{displayAmount(totalDespesas, showValues)}</span>
@@ -429,7 +429,7 @@ export default function FinanceiroPage() {
               {sortedExpenses.map((expense, i) => (
                 <li
                   key={`${expense._id}-${i}`}
-                  className="fade-up flex items-center justify-between gap-3 px-5 py-3.5 text-sm transition-all hover:bg-[rgba(58,125,214,0.02)]"
+                  className="fade-up flex items-center justify-between gap-3 px-5 py-3.5 text-sm transition-all hover:bg-surface-soft/60"
                   style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
                 >
                   <div className="min-w-0 flex-1">
@@ -452,7 +452,7 @@ export default function FinanceiroPage() {
         </div>
       ) : tab === "pagamentos" ? (
         <>
-          <div className="rounded-[18px] border border-[#efeae6] bg-white p-3 shadow-[0_4px_10px_rgba(15,23,42,0.012)]">
+          <div className="rounded-[18px] bg-surface p-3 shadow-[0_4px_10px_rgba(0,0,0,0.04)]">
             <div className="mb-2 flex items-center justify-between px-1">
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Período</span>
               <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Status</span>
@@ -467,7 +467,7 @@ export default function FinanceiroPage() {
                     setCurrentPage(1);
                   }}
                   className={`rounded-[10px] border px-3 py-2 text-sm font-medium transition-all ${
-                    periodFilter === period ? "border-[#dfeafc] bg-[#f4f8ff] text-[#1f3f6d]" : "border-[#eef1f4] bg-[#fafbfc] text-ink-muted hover:bg-[#f3f6f9]"
+                    periodFilter === period ? "border-blue bg-blue-soft text-blue" : "border-line bg-surface-soft text-ink-muted hover:bg-line-soft"
                   }`}
                 >
                   {period === "dia" ? "Hoje" : period === "semana" ? "Semana" : period === "mes" ? "Mês" : "Todos"}
@@ -484,7 +484,7 @@ export default function FinanceiroPage() {
                     setCurrentPage(1);
                   }}
                   className={`rounded-[10px] border px-3 py-2 text-sm font-medium transition-all ${
-                    statusFilter === s ? "border-[#dfeafc] bg-[#f4f8ff] text-[#1f3f6d]" : "border-[#eef1f4] bg-[#fafbfc] text-ink-muted hover:bg-[#f3f6f9]"
+                    statusFilter === s ? "border-blue bg-blue-soft text-blue" : "border-line bg-surface-soft text-ink-muted hover:bg-line-soft"
                   }`}
                 >
                   {s === "" ? "Todos" : statusLabels[s]}
@@ -492,27 +492,27 @@ export default function FinanceiroPage() {
               ))}
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-[#f2efeb] pt-3">
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-line pt-3">
               <div className="flex flex-wrap items-center justify-end gap-2">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#8b94a1]">Data</span>
+                <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-ink-faint">Data</span>
 
-                <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-[0.14em] text-[#8b94a1]">
+                <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-faint">
                   <span>De</span>
                   <input
                     type="date"
                     value={exportStart}
                     onChange={(e) => setExportStart(e.target.value)}
-                    className="h-8 w-[128px] rounded-[9px] border border-[#edf1f5] bg-white px-2 text-[0.72rem] font-medium text-ink outline-none transition-colors focus:border-[#cfe0ff] focus:ring-2 focus:ring-[#edf4ff]"
+                    className="h-8 w-[128px] rounded-[9px] bg-surface px-2 text-[0.72rem] font-medium text-ink outline-none transition-colors focus:border-blue focus:ring-2 focus:ring-blue-soft"
                   />
                 </div>
 
-                <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-[0.14em] text-[#8b94a1]">
+                <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-[0.14em] text-ink-faint">
                   <span>Até</span>
                   <input
                     type="date"
                     value={exportEnd}
                     onChange={(e) => setExportEnd(e.target.value)}
-                    className="h-8 w-[128px] rounded-[9px] border border-[#edf1f5] bg-white px-2 text-[0.72rem] font-medium text-ink outline-none transition-colors focus:border-[#cfe0ff] focus:ring-2 focus:ring-[#edf4ff]"
+                    className="h-8 w-[128px] rounded-[9px] bg-surface px-2 text-[0.72rem] font-medium text-ink outline-none transition-colors focus:border-blue focus:ring-2 focus:ring-blue-soft"
                   />
                 </div>
 
@@ -521,7 +521,7 @@ export default function FinanceiroPage() {
                   onClick={handleExportPdf}
                   aria-label="Exportar relatório em PDF"
                   title="Exportar relatório em PDF"
-                  className="flex h-8 w-8 items-center justify-center rounded-[9px] border border-[#e7ecf4] bg-white text-[#1f3f6d] transition-all hover:bg-[#f4f8ff]"
+                  className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-surface text-blue transition-all hover:bg-blue-soft"
                 >
                   <FileDown size={13} />
                 </button>
@@ -529,7 +529,7 @@ export default function FinanceiroPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[18px] border border-[#efeae6] bg-white">
+          <div className="overflow-hidden rounded-[18px] bg-surface">
             {loading ? (
               <div className="p-4 space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -543,7 +543,7 @@ export default function FinanceiroPage() {
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between border-b border-[#f0ece8] bg-[#faf8f7] px-5 py-3 text-[11px] text-ink-faint">
+                <div className="flex items-center justify-between border-b border-line bg-surface-soft px-5 py-3 text-[11px] text-ink-faint">
                   <span>
                     Mostrando {Math.min((safeCurrentPage - 1) * pageSize + 1, sortedPayments.length)}–
                     {Math.min(safeCurrentPage * pageSize, sortedPayments.length)} de {sortedPayments.length}
@@ -571,7 +571,7 @@ export default function FinanceiroPage() {
                             isSale: Boolean(p.flow),
                           })
                         }
-                        className="fade-up cursor-pointer rounded-[14px] border border-[#f0ece8] bg-[#fff] p-3 transition-all hover:border-[#dfeafc] hover:bg-[#fbfdff]"
+                        className="fade-up cursor-pointer rounded-[14px] bg-surface p-3 transition-all hover:shadow-[0_0_0_1px_var(--blue)] hover:bg-surface-soft/60"
                         style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
                       >
                         <div className="flex items-center gap-3">
@@ -586,7 +586,7 @@ export default function FinanceiroPage() {
                                 {p.patient?.name ?? "Paciente"}
                               </Link>
                               {!budgetRef && (
-                                <span className="shrink-0 rounded-full bg-[#f8e7d8] px-1.5 py-0.5 text-[9px] font-medium text-[#b4742d]">
+                                <span className="shrink-0 rounded-full bg-warning-soft px-1.5 py-0.5 text-[9px] font-medium text-warning">
                                   Avulso
                                 </span>
                               )}
@@ -616,7 +616,7 @@ export default function FinanceiroPage() {
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={safeCurrentPage === 1}
-                      className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-xs text-ink-muted disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-md bg-surface px-2.5 py-1.5 text-xs text-ink-muted disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Anterior
                     </button>
@@ -626,7 +626,7 @@ export default function FinanceiroPage() {
                     <button
                       onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                       disabled={safeCurrentPage === totalPages}
-                      className="rounded-md border border-line bg-surface px-2.5 py-1.5 text-xs text-ink-muted disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-md bg-surface px-2.5 py-1.5 text-xs text-ink-muted disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Próxima
                     </button>
@@ -637,7 +637,7 @@ export default function FinanceiroPage() {
           </div>
         </>
       ) : (
-        <div className="rounded-[18px] border border-[#efeae6] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f7_100%)] shadow-[0_8px_16px_rgba(15,23,42,0.02)]">
+        <div className="rounded-[18px] bg-surface shadow-[0_8px_16px_rgba(0,0,0,0.06)]">
           {loading ? (
             <div className="p-4 space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -820,7 +820,7 @@ function FinanceAlerts({
   };
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-[#efe5d8] bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] shadow-[0_7px_14px_rgba(168,106,12,0.03)]">
+    <div className="overflow-hidden rounded-[18px] border border-warning/25 bg-surface shadow-[0_7px_14px_color-mix(in_srgb,var(--warning)_12%,transparent)]">
       <div className="flex items-center gap-2 border-b border-line bg-surface-soft/40 px-5 py-3">
         <AlertTriangle size={15} className="text-warning" />
         <h2 className="text-sm font-semibold text-ink">Central de avisos</h2>

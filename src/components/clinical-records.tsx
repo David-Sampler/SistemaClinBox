@@ -107,7 +107,7 @@ function EditRecordModal({
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={onClose} />
       <form
         onSubmit={handleSubmit}
-        className="anim-scale-in relative bg-surface rounded-xl border border-line shadow-xl w-full max-w-lg p-6 space-y-4"
+        className="anim-scale-in relative bg-surface rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4"
       >
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold text-ink">Editar registro</h2>
@@ -215,7 +215,7 @@ export function ClinicalRecords({
       </div>
 
       {showForm && canManage && (
-        <form onSubmit={handleSubmit} className="bg-surface-soft border border-line rounded-lg p-4 space-y-3">
+        <form onSubmit={handleSubmit} className="bg-surface-soft rounded-lg p-4 space-y-3">
           <RecordFields dentists={dentists} />
           <button type="submit" disabled={saving} className="btn-primary">
             {saving ? "Salvando..." : "Salvar registro"}
@@ -240,7 +240,7 @@ export function ClinicalRecords({
                 <Stethoscope size={16} />
               </div>
 
-              <div className="flex-1 min-w-0 border border-line rounded-lg p-4 bg-surface hover:border-blue/30 transition-colors">
+              <div className="flex-1 min-w-0 rounded-lg p-4 bg-surface hover:shadow-[0_0_0_1px_var(--blue)]/30 transition-colors">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">

@@ -81,7 +81,7 @@ export default async function PrintDocumentPage({ params }: Props) {
           </div>
 
           {/* Dados do paciente numa caixa própria, em vez de uma frase corrida */}
-          <div className="bg-surface-soft border border-line rounded-xl px-5 py-3.5 mb-6">
+          <div className="bg-surface-soft rounded-xl px-5 py-3.5 mb-6">
             <p className="text-[10px] text-ink-faint uppercase tracking-wide">Paciente</p>
             <p className="font-medium text-ink">{patient?.name ?? "—"}</p>
             {patient?.cpf && <p className="text-xs text-ink-muted mt-0.5">CPF {patient.cpf}</p>}

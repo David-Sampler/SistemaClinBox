@@ -103,11 +103,11 @@ export default function ConfiguracoesPage() {
       {loading ? (
         <div className="skeleton h-64 rounded-xl" />
       ) : (
-        <div className="bg-surface rounded-xl border border-line p-6 space-y-6">
+        <div className="bg-surface rounded-xl p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-ink mb-1.5">Logo da clínica</label>
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-lg border border-line bg-surface-soft flex items-center justify-center overflow-hidden shrink-0">
+              <div className="w-20 h-20 rounded-lg bg-surface-soft flex items-center justify-center overflow-hidden shrink-0">
                 {hasLogo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

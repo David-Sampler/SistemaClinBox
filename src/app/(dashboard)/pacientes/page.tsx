@@ -75,11 +75,11 @@ export default function PatientsPage() {
             setPage(1);
           }}
           placeholder="Buscar por nome, CPF ou telefone..."
-          className="w-full rounded-lg border border-line pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40"
+          className="w-full rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue/40"
         />
       </div>
 
-      <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02] overflow-hidden">
+      <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02] overflow-hidden">
         {loading ? (
           <PatientListSkeleton />
         ) : patients.length === 0 ? (
@@ -125,7 +125,7 @@ export default function PatientsPage() {
                   type="button"
                   onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                   disabled={page === 1}
-                  className="rounded-md border border-line bg-white px-3 py-1.5 text-sm text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 hover:bg-surface"
+                  className="rounded-md bg-surface px-3 py-1.5 text-sm text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 hover:bg-surface-soft"
                 >
                   Anterior
                 </button>
@@ -136,7 +136,7 @@ export default function PatientsPage() {
                   type="button"
                   onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={page >= totalPages}
-                  className="rounded-md border border-line bg-white px-3 py-1.5 text-sm text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 hover:bg-surface"
+                  className="rounded-md bg-surface px-3 py-1.5 text-sm text-ink transition-colors disabled:cursor-not-allowed disabled:opacity-40 hover:bg-surface-soft"
                 >
                   Próxima
                 </button>

@@ -271,9 +271,9 @@ export default async function DashboardHome() {
 
   return (
     <div className="space-y-5">
-      <div className="fade-up relative overflow-hidden rounded-[24px] border border-[#ece7e2] bg-[linear-gradient(135deg,#ffffff_0%,#f8f7f5_100%)] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.025)] sm:p-6">
-        <div aria-hidden className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#edf4ff] opacity-80 blur-3xl" />
-        <div aria-hidden className="absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-[#f4efe8] opacity-80 blur-3xl" />
+      <div className="fade-up relative overflow-hidden rounded-[24px] bg-surface p-5 shadow-[0_12px_30px_rgba(0,0,0,0.08)] sm:p-6">
+        <div aria-hidden className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-blue-soft opacity-80 blur-3xl" />
+        <div aria-hidden className="absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-brass-soft opacity-80 blur-3xl" />
 
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
@@ -283,7 +283,7 @@ export default async function DashboardHome() {
               size={56}
               tone="sidebar"
               version={userId || "guest"}
-              className="ring-2 ring-[#edf2f7]"
+              className="ring-2 ring-surface-soft"
             />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">Painel da clínica</p>
@@ -295,9 +295,9 @@ export default async function DashboardHome() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink-muted">
-            <span className="rounded-full border border-[#ece7e2] bg-white px-3 py-1.5">{todayAppointments.length} consultas hoje</span>
-            <span className="rounded-full border border-[#ece7e2] bg-white px-3 py-1.5">{pendingCount} pendências</span>
-            <span className="rounded-full border border-[#ece7e2] bg-white px-3 py-1.5">{currency(receivedTotal)} este mês</span>
+            <span className="rounded-full bg-surface-soft px-3 py-1.5">{todayAppointments.length} consultas hoje</span>
+            <span className="rounded-full bg-surface-soft px-3 py-1.5">{pendingCount} pendências</span>
+            <span className="rounded-full bg-surface-soft px-3 py-1.5">{currency(receivedTotal)} este mês</span>
           </div>
         </div>
 
@@ -306,7 +306,7 @@ export default async function DashboardHome() {
           {tomorrowCount > 0 && (
             <Link
               href="/agenda"
-              className="inline-flex items-center gap-2 rounded-full border border-[#e9e1d8] bg-white px-3 py-1.5 text-sm text-ink hover:bg-[#f5f7fa]"
+              className="inline-flex items-center gap-2 rounded-full bg-surface-soft px-3 py-1.5 text-sm text-ink hover:bg-line-soft"
             >
               Amanhã: {tomorrowCount} {tomorrowCount === 1 ? "consulta" : "consultas"}
               <ArrowRight size={14} />
@@ -316,7 +316,7 @@ export default async function DashboardHome() {
       </div>
 
       {tomorrowCount > 0 && (
-        <div className="fade-up flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 text-sm shadow-sm shadow-ink/[0.02]">
+        <div className="fade-up flex items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-sm shadow-sm shadow-ink/[0.02]">
           <CalendarClock size={16} className="shrink-0 text-blue" />
           <p className="flex-1 text-ink-muted">
             <span className="font-medium text-ink">Amanhã</span> há {tomorrowCount}{" "}
@@ -361,8 +361,8 @@ export default async function DashboardHome() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(290px,0.9fr)] xl:items-start">
         <div className="min-w-0 xl:col-span-1 space-y-3">
-          <div className="overflow-hidden rounded-[20px] border border-[#ece8e3] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
-            <div className="flex items-center justify-between border-b border-[#f0ece8] px-4 py-3.5">
+          <div className="overflow-hidden rounded-[20px] bg-surface shadow-[0_8px_18px_rgba(0,0,0,0.06)]">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3.5">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">Agenda do dia</p>
                 <h2 className="mt-1 text-[1.06rem] font-semibold text-ink">Consultas de hoje</h2>
@@ -412,8 +412,8 @@ export default async function DashboardHome() {
             )}
           </div>
 
-          <div className="overflow-hidden rounded-[22px] border border-[#ece8e3] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
-            <div className="flex items-center gap-2 border-b border-[#f0ece8] px-5 py-4">
+          <div className="overflow-hidden rounded-[22px] bg-surface shadow-[0_8px_18px_rgba(0,0,0,0.06)]">
+            <div className="flex items-center gap-2 border-b border-line px-5 py-4">
               <Cake size={16} className="text-brass" />
               <h2 className="text-[0.96rem] font-semibold text-ink">Aniversários da semana</h2>
             </div>
@@ -453,8 +453,8 @@ export default async function DashboardHome() {
         </div>
 
         <div className="min-w-0 space-y-4 xl:col-span-1">
-          <div className="h-full overflow-hidden rounded-[22px] border border-[#ece8e3] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] shadow-[0_8px_18px_rgba(15,23,42,0.02)]">
-            <div className="flex items-center justify-between gap-3 border-b border-[#f0ece8] px-4 py-3">
+          <div className="h-full overflow-hidden rounded-[22px] bg-surface shadow-[0_8px_18px_rgba(0,0,0,0.06)]">
+            <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
               <div className="flex items-center gap-3 leading-none">
                 <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Financeiro</p>
                 <p className="font-display text-[2.05rem] font-semibold leading-none text-success tabular">{currency(receivedTotal)}</p>
@@ -465,7 +465,7 @@ export default async function DashboardHome() {
             </div>
 
             <div className="px-4 pb-2 pt-3">
-              <div className="mb-3 rounded-2xl border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] p-3">
+              <div className="mb-3 rounded-2xl bg-surface-soft p-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <ShoppingBag size={12} className="text-ink-faint" />
@@ -481,7 +481,7 @@ export default async function DashboardHome() {
                       <div key={item.label} className="flex flex-1 flex-col items-center justify-end gap-1.5">
                         <div className="flex h-20 w-full items-end justify-center">
                           <div
-                            className={`w-full rounded-t-[10px] ${item.label === bestMonth.label ? "bg-[linear-gradient(180deg,#6ea8ff_0%,#2d7ae7_100%)]" : "bg-[#e7eefb]"}`}
+                            className={`w-full rounded-t-[10px] ${item.label === bestMonth.label ? "bg-[linear-gradient(180deg,var(--blue-strong)_0%,var(--blue)_100%)]" : "bg-line"}`}
                             style={{ height: `${height}%` }}
                           />
                         </div>
@@ -492,7 +492,7 @@ export default async function DashboardHome() {
                 </div>
               </div>
 
-              <div className="mb-3 rounded-2xl border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] p-3">
+              <div className="mb-3 rounded-2xl bg-surface-soft p-3">
                 <div className="mb-2 flex items-center gap-1.5">
                   <Stethoscope size={12} className="text-ink-faint" />
                   <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-faint">Procedimentos</p>
@@ -502,7 +502,7 @@ export default async function DashboardHome() {
                   {topServices.map((service, index) => (
                     <li key={service._id} className="flex items-center justify-between gap-2 text-xs">
                       <div className="flex min-w-0 items-center gap-2">
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#edf4ff] text-[9px] font-semibold text-[#2d7ae7]">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-soft text-[9px] font-semibold text-blue">
                           {index + 1}
                         </span>
                         <span className="truncate text-ink">{service._id}</span>
@@ -560,9 +560,9 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="card-hover fade-up flex items-center gap-3 rounded-[16px] border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] px-3.5 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.015)] transition-all hover:-translate-y-0.5 hover:border-[#dfe9f7]"
+      className="card-hover fade-up flex items-center gap-3 rounded-[16px] bg-surface px-3.5 py-3 shadow-[0_8px_18px_rgba(0,0,0,0.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_var(--blue)]"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#edf4ff] text-[#2d7ae7]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-blue-soft text-blue">
         <Icon size={17} />
       </div>
       <span className="text-sm font-medium text-ink">{label}</span>
@@ -591,7 +591,7 @@ function SummaryCard({
   return (
     <Link
       href={href}
-      className="card-hover fade-up flex items-center gap-3.5 rounded-[18px] border border-[#ece7e2] bg-[linear-gradient(180deg,#ffffff_0%,#faf8f6_100%)] p-4 shadow-[0_10px_18px_rgba(15,23,42,0.02)] transition-all hover:-translate-y-0.5 hover:border-[#dfe9f7]"
+      className="card-hover fade-up flex items-center gap-3.5 rounded-[18px] bg-surface p-4 shadow-[0_10px_18px_rgba(0,0,0,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_var(--blue)]"
     >
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] ${iconTone}`}>
         <Icon size={20} />

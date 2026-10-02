@@ -69,7 +69,7 @@ function calculateAge(birthDate: Date) {
 }
 
 // Junta as partes do endereço numa única linha legível, pulando o que
-// não foi preenchido — evita "Rua , 12,  - -" quando falta algum campo.
+// não foi preenchido — evita "Rua , 12, - -" quando falta algum campo.
 function formatAddress(addr?: {
   street?: string;
   number?: string;
@@ -213,7 +213,7 @@ export default async function PatientDetailPage({ params }: Props) {
           seu próprio atalho de edição, igual a prontuários eletrônicos de
           mercado (a foto/contato nunca fica longe do lápis de editar). */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5 flex flex-col items-center text-center gap-4">
+        <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl shadow-sm shadow-ink/[0.02] p-5 flex flex-col items-center text-center gap-4">
           <Link
             href={editHref}
             className="print:hidden self-end -mt-3 -mr-3 -mb-4 text-ink-faint hover:text-blue transition-colors"
@@ -376,7 +376,7 @@ function StatCard({
     // print:break-inside-avoid: sem isso, a impressão podia cortar o
     // cartão ao meio bem na quebra de página (o ícone ficava numa
     // página e o valor/rótulo pulava sozinho pra próxima).
-    <div className={`fade-up print:break-inside-avoid bg-surface rounded-xl border border-line ${accentBorder} shadow-sm shadow-ink/[0.02] p-4`}>
+    <div className={`fade-up print:break-inside-avoid bg-surface rounded-xl ${accentBorder} shadow-sm shadow-ink/[0.02] p-4`}>
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${toneClass} mb-2.5`}>
         <Icon size={16} />
       </div>
@@ -399,7 +399,7 @@ function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl border border-line shadow-sm shadow-ink/[0.02] p-5">
+    <div className="fade-up print:break-inside-avoid bg-surface rounded-2xl shadow-sm shadow-ink/[0.02] p-5">
       <div className="flex items-center justify-between mb-3.5">
         <div className="flex items-center gap-2">
           <Icon size={15} className="text-ink-faint" />

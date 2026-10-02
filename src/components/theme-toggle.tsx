@@ -1,6 +1,7 @@
-// Botão que alterna entre os três temas visuais do sistema:
-// "Azul-saúde" (padrão) → "Clínica Moderna" (claro e colorido) →
-// "Verde-consultório" (verde-clínico, barra escura) → volta pro início.
+// Botão que alterna entre os três temas visuais do sistema: "Dark"
+// (padrão, navy escuro #162936) → "Clínica Clara" (único tema claro,
+// fundo branco, destaque verde) → "Verde Noturno" (verde escuro
+// saturado) → volta pro início.
 // A escolha fica salva no navegador (localStorage) — cada pessoa da
 // equipe pode usar o tema que preferir, sem afetar as outras.
 "use client";
@@ -16,18 +17,68 @@ const STORAGE_KEY = "clinbox-palette";
 const ORDER: PaletteName[] = ["saude", "clinic", "green"];
 
 const paletteLabels: Record<PaletteName, string> = {
-  saude: "Tema: Azul-saúde",
-  clinic: "Tema: Clínica moderna",
-  green: "Tema: Verde-consultório",
+  saude: "Tema: Dark",
+  clinic: "Tema: Clínica clara",
+  green: "Tema: Verde limão",
+};
+
+const paletteTokens: Record<PaletteName, Record<string, string>> = {
+  saude: {
+    "--porcelain": "#0a151c",
+    "--page-bg-top": "#16262f",
+    "--page-bg-bottom": "#0a141a",
+    "--surface": "#162936",
+    "--surface-soft": "#1c313f",
+    "--ink": "#eef3f6",
+    "--ink-muted": "#9db0bb",
+    "--ink-faint": "#677b86",
+    "--line": "#25404f",
+  },
+  clinic: {
+    "--porcelain": "#f3f1fb",
+    "--page-bg-top": "#ffffff",
+    "--page-bg-bottom": "#f1eefa",
+    "--surface": "#ffffff",
+    "--surface-soft": "#f4f1fb",
+    "--ink": "#221c3b",
+    "--ink-muted": "#8886a1",
+    "--ink-faint": "#b7b4c9",
+    "--line": "#ebe7f7",
+  },
+  green: {
+    "--porcelain": "#0b0b0d",
+    "--page-bg-top": "#121214",
+    "--page-bg-bottom": "#0b0b0d",
+    "--surface": "#19191c",
+    "--surface-soft": "#222226",
+    "--ink": "#f5f5f3",
+    "--ink-muted": "#a8a8ae",
+    "--ink-faint": "#6e6e74",
+    "--line": "#2c2c31",
+  },
 };
 
 function applyPalette(next: PaletteName) {
   const root = document.documentElement;
+  const body = document.body;
+
+  const tokens = paletteTokens[next];
+  Object.entries(tokens).forEach(([name, value]) => {
+    root.style.setProperty(name, value);
+  });
+
   if (next === "saude") {
     root.removeAttribute("data-palette");
+    body.style.background = "linear-gradient(180deg, #16262f 0%, #0a141a 100%)";
+    body.style.backgroundColor = "#0a141a";
+    body.style.color = tokens["--ink"];
     return;
   }
+
   root.setAttribute("data-palette", next);
+  body.style.background = `linear-gradient(180deg, ${tokens["--page-bg-top"]} 0%, ${tokens["--page-bg-bottom"]} 100%)`;
+  body.style.backgroundColor = tokens["--porcelain"];
+  body.style.color = tokens["--ink"];
 }
 
 export function ThemeToggle() {

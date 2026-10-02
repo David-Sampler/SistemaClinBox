@@ -144,7 +144,7 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   aria-invalid={!!error}
-                  className="w-full rounded-lg border border-line bg-surface pl-10 pr-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
+                  className="w-full rounded-lg bg-surface pl-10 pr-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
                   placeholder="voce@clinica.com"
                 />
               </div>
@@ -167,7 +167,7 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   aria-invalid={!!error}
-                  className="w-full rounded-lg border border-line bg-surface pl-10 pr-10 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
+                  className="w-full rounded-lg bg-surface pl-10 pr-10 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors"
                   placeholder="••••••••"
                 />
                 <button

@@ -100,7 +100,7 @@ export function PatientDocuments({ patientId }: { patientId: string }) {
       <form
         ref={formRef}
         onSubmit={handleUpload}
-        className="bg-surface-soft border border-line rounded-lg p-4 flex flex-wrap items-end gap-3"
+        className="bg-surface-soft rounded-lg p-4 flex flex-wrap items-end gap-3"
       >
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-medium text-ink-muted mb-1">Arquivo</label>
@@ -155,7 +155,7 @@ export function PatientDocuments({ patientId }: { patientId: string }) {
                   {items.map((a, i) => (
                     <div
                       key={a._id}
-                      className="fade-up group relative border border-line rounded-lg overflow-hidden bg-surface"
+                      className="fade-up group relative rounded-lg overflow-hidden bg-surface"
                       style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
                     >
                       {a.mimeType.startsWith("image/") ? (

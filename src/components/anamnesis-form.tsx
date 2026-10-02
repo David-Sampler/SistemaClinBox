@@ -68,7 +68,7 @@ export function AnamnesisForm({
           {CONDITION_ITEMS.map((c) => (
             <label
               key={c.key}
-              className="flex items-center gap-2 text-sm text-ink-muted rounded-lg border border-line px-3 py-2 hover:bg-surface-soft cursor-pointer"
+              className="flex items-center gap-2 text-sm text-ink-muted rounded-lg px-3 py-2 hover:bg-surface-soft cursor-pointer"
             >
               <input
                 type="checkbox"

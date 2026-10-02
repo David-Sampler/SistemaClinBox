@@ -60,7 +60,7 @@ export function PatientTabs({
   }
 
   return (
-    <div className="bg-surface rounded-xl border border-line shadow-sm shadow-ink/[0.02]">
+    <div className="bg-surface rounded-xl shadow-sm shadow-ink/[0.02]">
       <div className="print:hidden flex border-b border-line px-2 overflow-x-auto">
         {tabs.map((t) => (
           <button

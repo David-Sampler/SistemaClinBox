@@ -219,7 +219,7 @@ export function ClinicDocuments({
       </div>
 
       {showForm && canManage && (
-        <form onSubmit={handleSubmit} className="bg-surface-soft border border-line rounded-xl p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-surface-soft rounded-xl p-5 space-y-4">
           <div className="flex flex-wrap gap-1.5">
             {typeOptions.map((t) => (
               <button
@@ -227,7 +227,7 @@ export function ClinicDocuments({
                 type="button"
                 onClick={() => changeType(t)}
                 className={`px-3 h-8 text-xs font-medium rounded-full border transition-colors ${
-                  type === t ? "bg-ink text-porcelain border-ink" : "bg-surface text-ink-muted border-line hover:border-blue/40"
+                  type === t ? "bg-ink text-porcelain border-ink" : "bg-surface text-ink-muted border-line hover:shadow-[0_0_0_1px_var(--blue)]/40"
                 }`}
               >
                 {TYPE_LABELS[t]}
@@ -317,7 +317,7 @@ export function ClinicDocuments({
                     type="button"
                     onClick={() => removeItem(i)}
                     disabled={items.length === 1}
-                    className="h-9 w-9 rounded-lg border border-line flex items-center justify-center text-ink-faint hover:text-danger hover:border-danger/30 disabled:opacity-30"
+                    className="h-9 w-9 rounded-lg flex items-center justify-center text-ink-faint hover:text-danger hover:border-danger/30 disabled:opacity-30"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -356,7 +356,7 @@ export function ClinicDocuments({
       ) : documents.length === 0 ? (
         <p className="text-sm text-ink-muted py-6 text-center">Nenhum documento emitido ainda.</p>
       ) : (
-        <ul className="divide-y divide-line-soft border border-line rounded-xl overflow-hidden">
+        <ul className="divide-y divide-line-soft rounded-xl overflow-hidden">
           {documents.map((doc) => (
             <li key={doc._id} className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-surface-soft transition-colors">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${TYPE_STYLES[doc.type]}`}>
